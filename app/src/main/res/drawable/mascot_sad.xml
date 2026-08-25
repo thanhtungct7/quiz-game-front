@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    <!-- Simplified sad-owl mascot variant (droopy eyes, downturned beak). -->
+    <path
+        android:fillColor="#8BC34A"
+        android:pathData="M80,14C79.83,7.33 76.32,4 69.45,4H10.5C3.67,4 0.17,7.33 0,14V69.95C0.17,76.65 3.67,80 10.5,80H69.45C76.32,80 79.83,76.65 80,69.95Z" />
+    <!-- droopy eyes -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15.12,47.01a10,7 0,1 1,20 0a10,7 0,1 1,-20 0Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45.12,47.01a10,7 0,1 1,20 0a10,7 0,1 1,-20 0Z" />
+    <path
+        android:fillColor="#3D465D"
+        android:pathData="M20.12,48.01a5,5 0,1 1,10 0a5,5 0,1 1,-10 0Z" />
+    <path
+        android:fillColor="#3D465D"
+        android:pathData="M50.12,48.01a5,5 0,1 1,10 0a5,5 0,1 1,-10 0Z" />
+    <!-- sad mouth -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#3D465D"
+        android:strokeWidth="2"
+        android:pathData="M34,58c2.5,-4 9.5,-4 12,0" />
+</vector>
