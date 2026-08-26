@@ -26,6 +26,38 @@ data class LessonDto(
     val orderIndex: Int,
 )
 
+/**
+ * The whole learn path in one payload, served by `GET courses/{id}/tree` with an ETag.
+ *
+ * Replaces walking `/courses` -> `/courses/{id}/units` -> `/units/{id}/lessons`, which cost one
+ * request per unit on every app launch. Bank lessons (the imported question overflow) are not
+ * part of it.
+ */
+@Serializable
+data class CourseTreeDto(
+    val id: String,
+    val title: String,
+    val imageSrc: String,
+    val units: List<UnitTreeDto>,
+)
+
+@Serializable
+data class UnitTreeDto(
+    val id: String,
+    val title: String,
+    val description: String,
+    val orderIndex: Int,
+    val lessons: List<LessonTreeDto>,
+)
+
+@Serializable
+data class LessonTreeDto(
+    val id: String,
+    val title: String,
+    val orderIndex: Int,
+    val challengeCount: Int,
+)
+
 @Serializable
 data class PassageDto(
     val id: String,

@@ -11,9 +11,13 @@ data class UnitUi(
 )
 
 data class LearnUiState(
+    /** Only true while there is nothing to draw -- a cached path renders straight away. */
     val isLoading: Boolean = true,
+    /** A background refresh is in flight over an already-drawn path. */
+    val isSyncing: Boolean = false,
     val units: List<UnitUi> = emptyList(),
     val hearts: Int = GameConstants.MAX_HEARTS,
     val points: Int = 0,
     val isPro: Boolean = false,
+    val errorMessage: String? = null,
 )

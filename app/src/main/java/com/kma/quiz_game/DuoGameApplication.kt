@@ -31,7 +31,9 @@ class DuoGameApplication : Application() {
 
     val authRepository: AuthRepository by lazy { AuthRepository(authApi, usersApi, tokenStore) }
 
-    val learnRepository: LearnRepository by lazy { LearnRepository(contentApi, progressApi) }
+    val learnRepository: LearnRepository by lazy {
+        LearnRepository(contentApi, progressApi, database.courseContentDao())
+    }
 
     val challengeRepository: ChallengeRepository by lazy { ChallengeRepository(contentApi, progressApi) }
 

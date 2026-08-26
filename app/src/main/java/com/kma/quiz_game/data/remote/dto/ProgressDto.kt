@@ -18,3 +18,10 @@ data class UnitProgressDto(
     val unitId: String,
     val lessons: List<LessonProgressDto>,
 )
+
+/** Progress for every path lesson of a course -- one request instead of one per unit. */
+@Serializable
+data class CourseProgressDto(
+    val courseId: String,
+    val lessons: List<LessonProgressDto>,
+)
