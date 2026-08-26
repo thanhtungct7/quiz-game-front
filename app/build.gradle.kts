@@ -21,6 +21,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Host machine's LAN IP, for testing from a physical device on the same Wi-Fi.
+        // Must also be whitelisted in res/xml/network_security_config.xml (cleartext HTTP).
+        buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.8:8000/api/v1/\"")
+
+        // Must match the backend's GOOGLE_WEB_CLIENT_ID (see duo-game-back/.env) -- GoogleSignIn
+        // issues a Google ID token whose audience is this *Web* OAuth client, not an Android
+        // one, even though it's requested from the Android app.
+        buildConfigField(
+            "String",
+            "GOOGLE_WEB_CLIENT_ID",
+            "\"664465470290-b50a1e1cbkt0hm297mggnk3kno09hlvi.apps.googleusercontent.com\"",
+        )
     }
 
     buildTypes {
@@ -38,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -57,6 +71,12 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.kotlinx.serialization.converter)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.google.play.services.auth)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

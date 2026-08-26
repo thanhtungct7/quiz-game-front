@@ -36,7 +36,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.R
-import com.kma.quiz_game.data.local.entities.ChallengeType
+import com.kma.quiz_game.data.remote.dto.ChallengeTypeDto
 import com.kma.quiz_game.ui.components.ChallengeOptionCard
 import com.kma.quiz_game.ui.components.ChallengeOptionState
 import com.kma.quiz_game.ui.components.DuoButton
@@ -48,12 +48,14 @@ import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Rose500
 
 @Composable
-fun LessonScreen(lessonId: Long, onExit: () -> Unit) {
+fun LessonScreen(lessonId: String, onExit: () -> Unit) {
     val app = LocalContext.current.applicationContext as DuoGameApplication
     val viewModel: LessonViewModel = viewModel(
         key = "lesson_$lessonId",
         factory = viewModelFactory {
-            initializer { LessonViewModel(lessonId, app.challengeRepository, app.userProgressRepository) }
+            initializer {
+                LessonViewModel(lessonId, app.challengeRepository, app.userProgressRepository, app.authRepository)
+            }
         },
     )
     val uiState by viewModel.uiState.collectAsState()
@@ -95,21 +97,21 @@ fun LessonScreen(lessonId: Long, onExit: () -> Unit) {
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
-                if (challenge.challenge.type == ChallengeType.ASSIST) {
-                    QuestionBubble(question = challenge.challenge.question, modifier = Modifier.fillMaxWidth())
+                if (challenge.type == ChallengeTypeDto.ASSIST) {
+                    QuestionBubble(question = challenge.question, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(16.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         challenge.options.forEach { option ->
                             ChallengeOptionCard(
                                 text = option.text,
-                                state = optionState(option.id, option.correct, uiState),
+                                state = optionState(option.id, uiState),
                                 onClick = { viewModel.selectOption(option.id) },
-                                enabled = uiState.answerStatus == AnswerStatus.NONE,
+                                enabled = uiState.answerStatus == AnswerStatus.NONE && !uiState.isChecking,
                             )
                         }
                     }
                 } else {
-                    Text(text = challenge.challenge.question, style = MaterialTheme.typography.headlineMedium)
+                    Text(text = challenge.question, style = MaterialTheme.typography.headlineMedium)
                     Spacer(modifier = Modifier.height(16.dp))
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
@@ -119,9 +121,9 @@ fun LessonScreen(lessonId: Long, onExit: () -> Unit) {
                         items(challenge.options) { option ->
                             ChallengeOptionCard(
                                 text = option.text,
-                                state = optionState(option.id, option.correct, uiState),
+                                state = optionState(option.id, uiState),
                                 onClick = { viewModel.selectOption(option.id) },
-                                enabled = uiState.answerStatus == AnswerStatus.NONE,
+                                enabled = uiState.answerStatus == AnswerStatus.NONE && !uiState.isChecking,
                             )
                         }
                     }
@@ -129,9 +131,18 @@ fun LessonScreen(lessonId: Long, onExit: () -> Unit) {
             }
         }
 
+        uiState.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = Rose500,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
         LessonFooter(
             status = uiState.answerStatus,
-            canCheck = uiState.selectedOptionId != null,
+            canCheck = uiState.selectedOptionId != null && !uiState.isChecking,
+            isChecking = uiState.isChecking,
             onCheck = viewModel::onCheck,
             onContinue = viewModel::onContinue,
         )
@@ -154,14 +165,14 @@ fun LessonScreen(lessonId: Long, onExit: () -> Unit) {
     }
 }
 
-private fun optionState(optionId: Long, isCorrectOption: Boolean, uiState: LessonUiState): ChallengeOptionState {
+private fun optionState(optionId: String, uiState: LessonUiState): ChallengeOptionState {
     val selected = uiState.selectedOptionId == optionId
     return when (uiState.answerStatus) {
         AnswerStatus.NONE -> if (selected) ChallengeOptionState.SELECTED else ChallengeOptionState.NONE
         AnswerStatus.CORRECT -> if (selected) ChallengeOptionState.CORRECT else ChallengeOptionState.NONE
         AnswerStatus.WRONG -> when {
             selected -> ChallengeOptionState.WRONG
-            isCorrectOption -> ChallengeOptionState.CORRECT
+            optionId in uiState.correctOptionIds -> ChallengeOptionState.CORRECT
             else -> ChallengeOptionState.NONE
         }
     }
@@ -202,6 +213,7 @@ private fun LessonHeader(
 private fun LessonFooter(
     status: AnswerStatus,
     canCheck: Boolean,
+    isChecking: Boolean,
     onCheck: () -> Unit,
     onContinue: () -> Unit,
 ) {
@@ -223,7 +235,12 @@ private fun LessonFooter(
         }
         Spacer(modifier = Modifier.height(8.dp))
         when (status) {
-            AnswerStatus.NONE -> DuoButton(text = "Check", onClick = onCheck, enabled = canCheck, variant = DuoButtonVariant.Primary)
+            AnswerStatus.NONE -> DuoButton(
+                text = if (isChecking) "Checking..." else "Check",
+                onClick = onCheck,
+                enabled = canCheck,
+                variant = DuoButtonVariant.Primary,
+            )
             AnswerStatus.CORRECT -> DuoButton(text = "Continue", onClick = onContinue, variant = DuoButtonVariant.Primary)
             AnswerStatus.WRONG -> DuoButton(text = "Got it", onClick = onContinue, variant = DuoButtonVariant.Danger)
         }

@@ -26,7 +26,13 @@ sealed interface Destination {
     data object Shop : Destination
 
     @Serializable
-    data class Lesson(val lessonId: Long) : Destination
+    data class Lesson(val lessonId: String) : Destination
+
+    @Serializable
+    data object Login : Destination
+
+    @Serializable
+    data object Register : Destination
 }
 
 data class BottomNavItem(

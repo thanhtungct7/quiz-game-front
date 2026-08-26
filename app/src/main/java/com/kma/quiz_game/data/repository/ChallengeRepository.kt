@@ -1,32 +1,29 @@
 package com.kma.quiz_game.data.repository
 
-import com.kma.quiz_game.data.local.dao.ChallengeDao
-import com.kma.quiz_game.data.local.dao.ChallengeOptionDao
-import com.kma.quiz_game.data.local.dao.ChallengeProgressDao
-import com.kma.quiz_game.data.local.entities.ChallengeEntity
-import com.kma.quiz_game.data.local.entities.ChallengeOptionEntity
-import com.kma.quiz_game.data.local.entities.ChallengeProgressEntity
-import kotlinx.coroutines.flow.first
-
-data class ChallengeWithOptions(val challenge: ChallengeEntity, val options: List<ChallengeOptionEntity>)
+import com.kma.quiz_game.data.remote.api.ContentApi
+import com.kma.quiz_game.data.remote.api.ProgressApi
+import com.kma.quiz_game.data.remote.dto.AnswerCheckRequest
+import com.kma.quiz_game.data.remote.dto.AnswerCheckResult
+import com.kma.quiz_game.data.remote.dto.ChallengeDto
+import com.kma.quiz_game.data.remote.dto.LessonProgressStatusDto
 
 class ChallengeRepository(
-    private val challengeDao: ChallengeDao,
-    private val optionDao: ChallengeOptionDao,
-    private val progressDao: ChallengeProgressDao,
+    private val contentApi: ContentApi,
+    private val progressApi: ProgressApi,
 ) {
-    suspend fun loadChallenges(lessonId: Long): List<ChallengeWithOptions> {
-        val challenges = challengeDao.getByLesson(lessonId).first()
-        return challenges.map { challenge ->
-            ChallengeWithOptions(challenge, optionDao.getByChallenge(challenge.id).first())
-        }
-    }
+    suspend fun loadChallenges(lessonId: String): List<ChallengeDto> =
+        contentApi.getChallenges(lessonId)
 
-    suspend fun wasAlreadyCompleted(userId: String, challengeId: Long): Boolean {
-        return progressDao.getForChallenge(userId, challengeId)?.completed == true
-    }
+    /** Server-authoritative: the backend never sends the correct option to the client, so
+     * correctness can only be learned by asking it. */
+    suspend fun checkAnswer(challengeId: String, selectedOptionId: String): AnswerCheckResult =
+        progressApi.checkAnswer(challengeId, AnswerCheckRequest(selectedOptionId))
 
-    suspend fun markCompleted(userId: String, challengeId: Long) {
-        progressDao.upsert(ChallengeProgressEntity(userId, challengeId, completed = true))
-    }
+    /** Whether this lesson was already fully completed before this session -- used to decide
+     * "practice mode" hearts behavior. The backend doesn't expose per-challenge completion to
+     * the client, so this is lesson-granularity rather than per-challenge like before. */
+    suspend fun wasLessonAlreadyCompleted(lessonId: String): Boolean =
+        runCatching { progressApi.getLessonProgress(lessonId) }
+            .getOrNull()
+            ?.status == LessonProgressStatusDto.COMPLETED
 }

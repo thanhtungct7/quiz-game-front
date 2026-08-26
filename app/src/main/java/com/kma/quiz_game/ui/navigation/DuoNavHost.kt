@@ -8,7 +8,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -17,12 +19,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
 import com.kma.quiz_game.ui.screens.placeholder.PlaceholderScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun DuoNavHost() {
+    val app = LocalContext.current.applicationContext as DuoGameApplication
+    val coroutineScope = rememberCoroutineScope()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
@@ -70,6 +76,7 @@ fun DuoNavHost() {
             composable<Destination.Learn> {
                 LearnScreen(
                     onLessonClick = { lessonId -> navController.navigate(Destination.Lesson(lessonId)) },
+                    onLogout = { coroutineScope.launch { app.authRepository.logout() } },
                 )
             }
             composable<Destination.Leaderboard> {

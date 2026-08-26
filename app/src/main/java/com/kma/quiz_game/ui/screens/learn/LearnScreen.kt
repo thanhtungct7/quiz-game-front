@@ -3,13 +3,18 @@ package com.kma.quiz_game.ui.screens.learn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,12 +37,13 @@ import com.kma.quiz_game.ui.rememberAppViewModelFactory
 
 @Composable
 fun LearnScreen(
-    onLessonClick: (Long) -> Unit,
+    onLessonClick: (String) -> Unit,
+    onLogout: () -> Unit,
     factory: AppViewModelFactory = rememberAppViewModelFactory(),
     viewModel: LearnViewModel = viewModel(factory = factory),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var practiceLessonId by remember { mutableStateOf<Long?>(null) }
+    var practiceLessonId by remember { mutableStateOf<String?>(null) }
 
     if (uiState.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -48,7 +54,17 @@ fun LearnScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(shadowElevation = 2.dp) {
-            UserProgressBar(points = uiState.points, hearts = uiState.hearts, isPro = uiState.isPro)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                UserProgressBar(
+                    points = uiState.points,
+                    hearts = uiState.hearts,
+                    isPro = uiState.isPro,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onLogout) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Đăng xuất")
+                }
+            }
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

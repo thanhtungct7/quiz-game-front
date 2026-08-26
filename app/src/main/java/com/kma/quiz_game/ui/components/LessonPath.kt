@@ -35,7 +35,7 @@ import com.kma.quiz_game.ui.theme.ShapeFull
 enum class LessonNodeStatus { LOCKED, ACTIVE, COMPLETE }
 
 data class LessonPathItem(
-    val id: Long,
+    val id: String,
     val title: String,
     val status: LessonNodeStatus,
 )
@@ -46,7 +46,7 @@ private val CYCLE_OFFSETS_DP = listOf(0, 40, 64, 40, 0, -40, -64, -40)
 @Composable
 fun LessonPath(
     lessons: List<LessonPathItem>,
-    onLessonClick: (Long) -> Unit,
+    onLessonClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -131,10 +131,10 @@ private fun LessonPathPreview() {
     Quiz_gameTheme {
         LessonPath(
             lessons = listOf(
-                LessonPathItem(1, "Lesson 1", LessonNodeStatus.COMPLETE),
-                LessonPathItem(2, "Lesson 2", LessonNodeStatus.ACTIVE),
-                LessonPathItem(3, "Lesson 3", LessonNodeStatus.LOCKED),
-                LessonPathItem(4, "Lesson 4", LessonNodeStatus.LOCKED),
+                LessonPathItem("1", "Lesson 1", LessonNodeStatus.COMPLETE),
+                LessonPathItem("2", "Lesson 2", LessonNodeStatus.ACTIVE),
+                LessonPathItem("3", "Lesson 3", LessonNodeStatus.LOCKED),
+                LessonPathItem("4", "Lesson 4", LessonNodeStatus.LOCKED),
             ),
             onLessonClick = {},
         )

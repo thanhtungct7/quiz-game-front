@@ -13,8 +13,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
         return when (modelClass) {
             LearnViewModel::class.java -> LearnViewModel(
                 app.learnRepository,
-                app.challengeProgressRepository,
                 app.userProgressRepository,
+                app.authRepository,
             ) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")

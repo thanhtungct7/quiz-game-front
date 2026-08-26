@@ -2,7 +2,13 @@ package com.kma.quiz_game
 
 import android.app.Application
 import com.kma.quiz_game.data.local.AppDatabase
-import com.kma.quiz_game.data.repository.ChallengeProgressRepository
+import com.kma.quiz_game.data.remote.NetworkModule
+import com.kma.quiz_game.data.remote.TokenStore
+import com.kma.quiz_game.data.remote.api.AuthApi
+import com.kma.quiz_game.data.remote.api.ContentApi
+import com.kma.quiz_game.data.remote.api.ProgressApi
+import com.kma.quiz_game.data.remote.api.UsersApi
+import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.ChallengeRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.UserProgressRepository
@@ -10,20 +16,26 @@ import com.kma.quiz_game.data.repository.UserProgressRepository
 class DuoGameApplication : Application() {
 
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
+    private val tokenStore: TokenStore by lazy { TokenStore(this) }
 
-    val learnRepository: LearnRepository by lazy {
-        LearnRepository(database.courseDao(), database.unitDao(), database.lessonDao(), database.challengeDao())
-    }
+    // Unauthenticated -- carries no AuthInterceptor, so AuthApi.refresh() never recurses.
+    private val authRetrofit by lazy { NetworkModule.buildAuthRetrofit() }
+    private val authApi: AuthApi by lazy { authRetrofit.create(AuthApi::class.java) }
 
-    val challengeProgressRepository: ChallengeProgressRepository by lazy {
-        ChallengeProgressRepository(database.challengeProgressDao())
+    private val authenticatedRetrofit by lazy {
+        NetworkModule.buildAuthenticatedRetrofit(tokenStore) { authApi }
     }
+    private val usersApi: UsersApi by lazy { authenticatedRetrofit.create(UsersApi::class.java) }
+    private val contentApi: ContentApi by lazy { authenticatedRetrofit.create(ContentApi::class.java) }
+    private val progressApi: ProgressApi by lazy { authenticatedRetrofit.create(ProgressApi::class.java) }
 
-    val challengeRepository: ChallengeRepository by lazy {
-        ChallengeRepository(database.challengeDao(), database.challengeOptionDao(), database.challengeProgressDao())
-    }
+    val authRepository: AuthRepository by lazy { AuthRepository(authApi, usersApi, tokenStore) }
+
+    val learnRepository: LearnRepository by lazy { LearnRepository(contentApi, progressApi) }
+
+    val challengeRepository: ChallengeRepository by lazy { ChallengeRepository(contentApi, progressApi) }
 
     val userProgressRepository: UserProgressRepository by lazy {
-        UserProgressRepository(database.userProgressDao(), AppDatabase.LOCAL_USER_ID)
+        UserProgressRepository(database.userProgressDao())
     }
 }
