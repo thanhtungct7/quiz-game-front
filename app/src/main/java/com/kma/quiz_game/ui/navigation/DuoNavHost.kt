@@ -20,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
 import com.kma.quiz_game.ui.screens.placeholder.PlaceholderScreen
@@ -80,7 +81,8 @@ fun DuoNavHost() {
                 )
             }
             composable<Destination.Leaderboard> {
-                PlaceholderScreen(title = "Leaderboard", subtitle = "Coming in the next iteration")
+                // The empty state's "go and play" action arrives with the Duo tab.
+                LeaderboardScreen(onPlayDuo = {})
             }
             composable<Destination.Quests> {
                 PlaceholderScreen(title = "Quests", subtitle = "Coming in the next iteration")

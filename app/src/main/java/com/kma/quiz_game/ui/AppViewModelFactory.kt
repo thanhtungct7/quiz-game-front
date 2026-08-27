@@ -5,8 +5,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardViewModel
 import com.kma.quiz_game.ui.screens.learn.LearnViewModel
 
+/**
+ * Builds the ViewModels whose dependencies are all application-scoped singletons.
+ *
+ * ViewModels that need a route argument (a lesson id, a match id) are not listed here -- those use
+ * an inline `viewModelFactory { initializer { ... } }` at their call site, keyed by the argument,
+ * so each one gets its own instance.
+ */
 class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -16,6 +24,9 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
                 app.userProgressRepository,
                 app.authRepository,
             ) as T
+
+            LeaderboardViewModel::class.java ->
+                LeaderboardViewModel(app.duoRepository, app.authRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }
