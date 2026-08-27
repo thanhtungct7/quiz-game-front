@@ -23,6 +23,13 @@ sealed interface Destination {
     @Serializable
     data object Duo : Destination
 
+    /** The live match. Full screen -- the bottom bar is hidden here. */
+    @Serializable
+    data object DuoMatch : Destination
+
+    @Serializable
+    data object DuoResult : Destination
+
     @Serializable
     data object Shop : Destination
 

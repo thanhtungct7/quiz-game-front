@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -21,6 +22,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
+import com.kma.quiz_game.ui.screens.duo.DuoMatchScreen
+import com.kma.quiz_game.ui.screens.duo.DuoResultScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
@@ -87,8 +90,20 @@ fun DuoNavHost() {
             composable<Destination.Duo> {
                 DuoHomeScreen(
                     // The socket decides when a match exists, so the lobby only signals it here.
-                    onMatchStarting = {},   // the match screen arrives in the next commit
+                    onMatchStarting = { navController.navigateToMatch() },
                     onOpenHistory = {},     // the history screen arrives in a later commit
+                )
+            }
+            composable<Destination.DuoMatch> {
+                DuoMatchScreen(
+                    onFinished = { navController.replaceMatchWith(Destination.DuoResult) },
+                    onLeft = { navController.replaceMatchWith(Destination.Duo) },
+                )
+            }
+            composable<Destination.DuoResult> {
+                DuoResultScreen(
+                    onPlayAgain = { navController.replaceResultWith(Destination.Duo) },
+                    onBackToLobby = { navController.replaceResultWith(Destination.Duo) },
                 )
             }
             composable<Destination.Shop> {
@@ -102,5 +117,25 @@ fun DuoNavHost() {
                 )
             }
         }
+    }
+}
+
+/** The lobby can fire this more than once as the phase settles; [launchSingleTop] keeps it to one. */
+private fun NavController.navigateToMatch() {
+    navigate(Destination.DuoMatch) { launchSingleTop = true }
+}
+
+/** A finished or abandoned match must not be reachable with Back. */
+private fun NavController.replaceMatchWith(destination: Destination) {
+    navigate(destination) {
+        popUpTo(Destination.DuoMatch) { inclusive = true }
+        launchSingleTop = true
+    }
+}
+
+private fun NavController.replaceResultWith(destination: Destination) {
+    navigate(destination) {
+        popUpTo(Destination.DuoResult) { inclusive = true }
+        launchSingleTop = true
     }
 }
