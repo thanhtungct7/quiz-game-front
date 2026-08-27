@@ -3,10 +3,13 @@ package com.kma.quiz_game.data.remote.dto
 import kotlinx.serialization.Serializable
 
 /**
- * Wire types for the 1v1 PvP REST endpoints under `/duo`.
+ * Wire types for 1v1 PvP -- both the REST endpoints under `/duo` and the WebSocket payloads.
  *
  * Field names are plain camelCase: [com.kma.quiz_game.data.remote.NetworkModule.json] maps them
  * to the backend's snake_case, so no `@SerialName` is needed anywhere here.
+ *
+ * The question carried by `round.start` is a `ChallengePublicRead`, which is exactly the existing
+ * [ChallengeDto] -- it is reused rather than redeclared.
  */
 
 // --- Shared value types ---------------------------------------------------
@@ -151,3 +154,155 @@ data class DuoRoomPreviewDto(
     val settings: DuoSettingsDto,
     val playerCount: Int,
 )
+
+// --- WebSocket payloads ---------------------------------------------------
+
+@Serializable
+data class ConnectedDto(
+    val user: DuoPlayerDto,
+    val activeMatchId: String? = null,
+)
+
+@Serializable
+data class QueueWaitingDto(
+    val position: Int,
+    val waitedSeconds: Int,
+)
+
+@Serializable
+data class RoomCreatedDto(
+    val matchId: String,
+    val roomCode: String,
+    val settings: DuoSettingsDto,
+)
+
+@Serializable
+data class MatchFoundDto(
+    val matchId: String,
+    val roomCode: String? = null,
+    val mode: DuoMatchMode,
+    val opponent: DuoPlayerDto,
+    val settings: DuoSettingsDto,
+    val hostId: String,
+    /** True for the random queue (the match loop is already running); false in a friend room,
+     * where the host must send `match.start`. */
+    val autoStart: Boolean,
+)
+
+@Serializable
+data class MatchStartedDto(
+    val matchId: String,
+    val totalRounds: Int,
+)
+
+@Serializable
+data class RoundStartDto(
+    val roundIndex: Int,
+    val totalRounds: Int,
+    val question: ChallengeDto,
+    val timeLimitSeconds: Int,
+    /** Server-side deadline. The countdown runs off [timeLimitSeconds] instead, so a skewed
+     * device clock cannot shorten or stretch the round on screen. */
+    val deadlineAt: String? = null,
+)
+
+@Serializable
+data class OpponentAnsweredDto(val roundIndex: Int)
+
+@Serializable
+data class AnswerOutcomeDto(
+    val optionId: String? = null,
+    val correct: Boolean,
+    /** Measured on the server from the round start -- the client never reports its own timing. */
+    val elapsedMs: Int? = null,
+    val points: Int,
+)
+
+@Serializable
+data class RoundResultDto(
+    val roundIndex: Int,
+    val correctOptionIds: List<String> = emptyList(),
+    val explanation: String? = null,
+    val you: AnswerOutcomeDto,
+    val opponent: AnswerOutcomeDto,
+    val yourScore: Int,
+    val opponentScore: Int,
+)
+
+/** Everything needed to rebuild the match screen after reconnecting. */
+@Serializable
+data class MatchResumeDto(
+    val matchId: String,
+    val opponent: DuoPlayerDto,
+    val settings: DuoSettingsDto,
+    val roundIndex: Int,
+    val totalRounds: Int,
+    val yourScore: Int,
+    val opponentScore: Int,
+    val question: ChallengeDto? = null,
+    val secondsRemaining: Int? = null,
+    val alreadyAnswered: Boolean = false,
+)
+
+@Serializable
+data class OpponentDisconnectedDto(val graceSeconds: Int)
+
+@Serializable
+data class RatingChangeDto(
+    val before: Int,
+    val after: Int,
+    val delta: Int,
+)
+
+@Serializable
+data class MatchFinishedDto(
+    val matchId: String,
+    val result: MatchOutcome,
+    val endReason: DuoMatchEndReason,
+    val yourScore: Int,
+    val opponentScore: Int,
+    val yourCorrect: Int,
+    val opponentCorrect: Int,
+    val totalRounds: Int,
+    val durationSeconds: Int,
+    val rating: RatingChangeDto,
+)
+
+/** Broadcast to both players, including whoever sent it. */
+@Serializable
+data class ChatMessageDto(
+    val userId: String,
+    val message: String,
+    val sentAt: String,
+)
+
+/** [code] stays a raw string on the wire so an error code added on the server later degrades to
+ * [DuoErrorCode.UNKNOWN] instead of crashing the decoder. */
+@Serializable
+data class ErrorDto(
+    val code: String = "",
+    val message: String = "",
+) {
+    val errorCode: DuoErrorCode
+        get() = DuoErrorCode.entries.firstOrNull { it.name == code } ?: DuoErrorCode.UNKNOWN
+}
+
+/** Stable error codes from `app/schemas/duo/events.py`, plus a client-side catch-all. */
+enum class DuoErrorCode {
+    INVALID_PAYLOAD,
+    UNKNOWN_EVENT,
+    ALREADY_IN_MATCH,
+    ALREADY_IN_QUEUE,
+    NOT_IN_QUEUE,
+    ROOM_NOT_FOUND,
+    ROOM_FULL,
+    NOT_HOST,
+    NOT_ENOUGH_PLAYERS,
+    MATCH_ALREADY_STARTED,
+    NOT_IN_MATCH,
+    ROUND_CLOSED,
+    ALREADY_ANSWERED,
+    INVALID_OPTION,
+    NO_QUESTIONS_AVAILABLE,
+    UNKNOWN,
+}
