@@ -79,6 +79,7 @@ class LessonViewModel(
                             isChecking = false,
                             answerStatus = AnswerStatus.CORRECT,
                             correctOptionIds = checkResult.correctOptionIds,
+                            explanation = checkResult.explanation,
                         )
                     }
                 } else {
@@ -96,6 +97,7 @@ class LessonViewModel(
                             answerStatus = AnswerStatus.WRONG,
                             showHeartsDialog = showHearts,
                             correctOptionIds = checkResult.correctOptionIds,
+                            explanation = checkResult.explanation,
                         )
                     }
                 }
@@ -121,6 +123,7 @@ class LessonViewModel(
                             selectedOptionId = null,
                             answerStatus = AnswerStatus.NONE,
                             correctOptionIds = emptyList(),
+                            explanation = null,
                         )
                     }
                 }
@@ -129,6 +132,7 @@ class LessonViewModel(
                     selectedOptionId = null,
                     answerStatus = AnswerStatus.NONE,
                     correctOptionIds = emptyList(),
+                    explanation = null,
                 )
 
                 AnswerStatus.NONE -> state

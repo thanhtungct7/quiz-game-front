@@ -143,6 +143,7 @@ fun LessonScreen(lessonId: String, onExit: () -> Unit) {
             status = uiState.answerStatus,
             canCheck = uiState.selectedOptionId != null && !uiState.isChecking,
             isChecking = uiState.isChecking,
+            explanation = uiState.explanation,
             onCheck = viewModel::onCheck,
             onContinue = viewModel::onContinue,
         )
@@ -214,6 +215,7 @@ private fun LessonFooter(
     status: AnswerStatus,
     canCheck: Boolean,
     isChecking: Boolean,
+    explanation: String?,
     onCheck: () -> Unit,
     onContinue: () -> Unit,
 ) {
@@ -232,6 +234,15 @@ private fun LessonFooter(
             AnswerStatus.CORRECT -> Text(text = "Nicely done!", color = Green500, style = MaterialTheme.typography.titleMedium)
             AnswerStatus.WRONG -> Text(text = "Correct solution required", color = Rose500, style = MaterialTheme.typography.titleMedium)
             AnswerStatus.NONE -> Unit
+        }
+        // The answer check returns an explanation; it is most useful on a wrong answer.
+        if (status == AnswerStatus.WRONG && !explanation.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = explanation,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
         when (status) {

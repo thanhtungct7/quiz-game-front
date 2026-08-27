@@ -13,6 +13,8 @@ data class LessonUiState(
     val answerStatus: AnswerStatus = AnswerStatus.NONE,
     val isChecking: Boolean = false,
     val correctOptionIds: List<String> = emptyList(),
+    /** Sent by `POST /challenges/{id}/check`; worth showing when the answer was wrong. */
+    val explanation: String? = null,
     val hearts: Int = GameConstants.MAX_HEARTS,
     val points: Int = 0,
     val isPro: Boolean = false,
