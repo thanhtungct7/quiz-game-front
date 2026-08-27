@@ -5,6 +5,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.duo.DuoHistoryViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoHomeViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoMatchViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoResultViewModel
@@ -36,6 +37,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
             DuoMatchViewModel::class.java -> DuoMatchViewModel(app.duoRepository) as T
 
             DuoResultViewModel::class.java -> DuoResultViewModel(app.duoRepository) as T
+
+            DuoHistoryViewModel::class.java -> DuoHistoryViewModel(app.duoRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

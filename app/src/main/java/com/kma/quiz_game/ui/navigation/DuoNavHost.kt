@@ -21,7 +21,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.duo.DuoHistoryScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
+import com.kma.quiz_game.ui.screens.duo.DuoMatchDetailScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchScreen
 import com.kma.quiz_game.ui.screens.duo.DuoResultScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
@@ -91,7 +93,7 @@ fun DuoNavHost() {
                 DuoHomeScreen(
                     // The socket decides when a match exists, so the lobby only signals it here.
                     onMatchStarting = { navController.navigateToMatch() },
-                    onOpenHistory = {},     // the history screen arrives in a later commit
+                    onOpenHistory = { navController.navigate(Destination.DuoHistory) },
                 )
             }
             composable<Destination.DuoMatch> {
@@ -104,6 +106,19 @@ fun DuoNavHost() {
                 DuoResultScreen(
                     onPlayAgain = { navController.replaceResultWith(Destination.Duo) },
                     onBackToLobby = { navController.replaceResultWith(Destination.Duo) },
+                )
+            }
+            composable<Destination.DuoHistory> {
+                DuoHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenMatch = { matchId -> navController.navigate(Destination.DuoMatchDetail(matchId)) },
+                )
+            }
+            composable<Destination.DuoMatchDetail> { entry ->
+                val route = entry.toRoute<Destination.DuoMatchDetail>()
+                DuoMatchDetailScreen(
+                    matchId = route.matchId,
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable<Destination.Shop> {

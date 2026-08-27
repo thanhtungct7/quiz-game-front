@@ -31,6 +31,12 @@ sealed interface Destination {
     data object DuoResult : Destination
 
     @Serializable
+    data object DuoHistory : Destination
+
+    @Serializable
+    data class DuoMatchDetail(val matchId: String) : Destination
+
+    @Serializable
     data object Shop : Destination
 
     @Serializable
