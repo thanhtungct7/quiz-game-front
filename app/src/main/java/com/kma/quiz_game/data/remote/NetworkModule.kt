@@ -47,4 +47,19 @@ object NetworkModule {
             .build()
         return retrofit(client)
     }
+
+    /**
+     * A separate client for the duo match socket.
+     *
+     * The 15-second read timeout above would kill a socket that is merely idle -- waiting in the
+     * matchmaking queue can legitimately take up to 300 seconds -- so reads never time out here,
+     * and OkHttp's own pings detect a genuinely dead connection instead.
+     *
+     * It also carries no AuthInterceptor: a WebSocket handshake authenticates through the `token`
+     * query parameter, not an `Authorization` header.
+     */
+    fun buildWebSocketClient(): OkHttpClient = baseClientBuilder()
+        .readTimeout(0, TimeUnit.MILLISECONDS)
+        .pingInterval(20, TimeUnit.SECONDS)
+        .build()
 }
