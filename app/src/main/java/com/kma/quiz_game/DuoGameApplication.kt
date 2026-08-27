@@ -2,6 +2,8 @@ package com.kma.quiz_game
 
 import android.app.Application
 import com.kma.quiz_game.data.local.AppDatabase
+import com.kma.quiz_game.data.remote.DuoSocket
+import com.kma.quiz_game.data.remote.FreshTokenProvider
 import com.kma.quiz_game.data.remote.NetworkModule
 import com.kma.quiz_game.data.remote.TokenStore
 import com.kma.quiz_game.data.remote.api.AuthApi
@@ -45,5 +47,18 @@ class DuoGameApplication : Application() {
 
     private val duoApi: DuoApi by lazy { authenticatedRetrofit.create(DuoApi::class.java) }
 
-    val duoRepository: DuoRepository by lazy { DuoRepository(duoApi) }
+    /** Its own OkHttp client: a match socket must be allowed to sit idle far longer than the
+     * 15-second read timeout the REST stack uses. */
+    private val duoSocket: DuoSocket by lazy {
+        val freshToken = FreshTokenProvider(usersApi, tokenStore)
+        DuoSocket(
+            client = NetworkModule.buildWebSocketClient(),
+            json = NetworkModule.json,
+            tokenProvider = freshToken::invoke,
+        )
+    }
+
+    val duoRepository: DuoRepository by lazy {
+        DuoRepository(duoApi, duoSocket, NetworkModule.json)
+    }
 }
