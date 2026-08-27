@@ -1,13 +1,13 @@
 package com.kma.quiz_game.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
@@ -19,8 +19,9 @@ sealed interface Destination {
     @Serializable
     data object Leaderboard : Destination
 
+    /** PvP lobby: rating, matchmaking, friend rooms and the way into match history. */
     @Serializable
-    data object Quests : Destination
+    data object Duo : Destination
 
     @Serializable
     data object Shop : Destination
@@ -42,9 +43,10 @@ data class BottomNavItem(
     val unselectedIcon: ImageVector,
 )
 
+/** Also decides where the bottom bar shows: any route outside this list is full-screen. */
 val BOTTOM_NAV_ITEMS = listOf(
     BottomNavItem(Destination.Learn, "Learn", Icons.Filled.School, Icons.Outlined.School),
+    BottomNavItem(Destination.Duo, "Duo", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports),
     BottomNavItem(Destination.Leaderboard, "Ranking", Icons.Filled.Leaderboard, Icons.Outlined.Leaderboard),
-    BottomNavItem(Destination.Quests, "Quests", Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents),
     BottomNavItem(Destination.Shop, "Shop", Icons.Filled.Storefront, Icons.Outlined.Storefront),
 )

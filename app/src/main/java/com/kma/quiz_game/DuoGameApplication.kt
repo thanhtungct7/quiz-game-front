@@ -61,4 +61,13 @@ class DuoGameApplication : Application() {
     val duoRepository: DuoRepository by lazy {
         DuoRepository(duoApi, duoSocket, NetworkModule.json)
     }
+
+    /**
+     * Logging out revokes the refresh token, so the socket has to go first -- otherwise it keeps a
+     * connection open on credentials the server has just thrown away, and reconnects on them.
+     */
+    suspend fun logout() {
+        duoRepository.disconnect()
+        authRepository.logout()
+    }
 }

@@ -5,6 +5,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.duo.DuoHomeViewModel
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardViewModel
 import com.kma.quiz_game.ui.screens.learn.LearnViewModel
 
@@ -27,6 +28,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
 
             LeaderboardViewModel::class.java ->
                 LeaderboardViewModel(app.duoRepository, app.authRepository) as T
+
+            DuoHomeViewModel::class.java -> DuoHomeViewModel(app.duoRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

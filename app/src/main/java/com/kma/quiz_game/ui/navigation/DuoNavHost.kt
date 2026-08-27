@@ -20,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
@@ -77,15 +78,18 @@ fun DuoNavHost() {
             composable<Destination.Learn> {
                 LearnScreen(
                     onLessonClick = { lessonId -> navController.navigate(Destination.Lesson(lessonId)) },
-                    onLogout = { coroutineScope.launch { app.authRepository.logout() } },
+                    onLogout = { coroutineScope.launch { app.logout() } },
                 )
             }
             composable<Destination.Leaderboard> {
-                // The empty state's "go and play" action arrives with the Duo tab.
-                LeaderboardScreen(onPlayDuo = {})
+                LeaderboardScreen(onPlayDuo = { navController.navigate(Destination.Duo) })
             }
-            composable<Destination.Quests> {
-                PlaceholderScreen(title = "Quests", subtitle = "Coming in the next iteration")
+            composable<Destination.Duo> {
+                DuoHomeScreen(
+                    // The socket decides when a match exists, so the lobby only signals it here.
+                    onMatchStarting = {},   // the match screen arrives in the next commit
+                    onOpenHistory = {},     // the history screen arrives in a later commit
+                )
             }
             composable<Destination.Shop> {
                 PlaceholderScreen(title = "Shop", subtitle = "Coming in the next iteration")
