@@ -3,11 +3,14 @@ package com.kma.quiz_game.data.repository
 import com.kma.quiz_game.data.remote.TokenStore
 import com.kma.quiz_game.data.remote.api.AuthApi
 import com.kma.quiz_game.data.remote.api.UsersApi
+import com.kma.quiz_game.data.remote.dto.ForgotPasswordRequest
 import com.kma.quiz_game.data.remote.dto.GoogleLoginRequest
 import com.kma.quiz_game.data.remote.dto.LoginRequest
 import com.kma.quiz_game.data.remote.dto.RefreshTokenRequest
 import com.kma.quiz_game.data.remote.dto.RegisterRequest
+import com.kma.quiz_game.data.remote.dto.ResetPasswordRequest
 import com.kma.quiz_game.data.remote.dto.TokenResponse
+import com.kma.quiz_game.data.remote.throwIfUnsuccessful
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -35,6 +38,23 @@ class AuthRepository(
      * backend's configured web client id (see BuildConfig.GOOGLE_WEB_CLIENT_ID). */
     suspend fun loginWithGoogle(idToken: String): Result<Unit> = runCatching {
         establishSession { authApi.google(GoogleLoginRequest(idToken)) }
+    }
+
+    /**
+     * Asks for a reset link. Succeeds even for an address with no account -- the backend answers
+     * 202 either way so that this endpoint can't be used to probe which emails are registered,
+     * and the UI has to keep that promise by showing the same confirmation.
+     */
+    suspend fun requestPasswordReset(email: String): Result<Unit> = runCatching {
+        authApi.forgotPassword(ForgotPasswordRequest(email)).throwIfUnsuccessful()
+    }
+
+    /**
+     * Consumes the one-time token from the reset email. No session is established: the backend
+     * revokes every refresh token as part of the reset, so the user signs in again by hand.
+     */
+    suspend fun resetPassword(token: String, newPassword: String): Result<Unit> = runCatching {
+        authApi.resetPassword(ResetPasswordRequest(token, newPassword)).throwIfUnsuccessful()
     }
 
     private suspend fun establishSession(obtainTokens: suspend () -> TokenResponse) {

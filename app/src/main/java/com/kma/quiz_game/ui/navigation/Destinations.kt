@@ -47,6 +47,14 @@ sealed interface Destination {
 
     @Serializable
     data object Register : Destination
+
+    @Serializable
+    data object ForgotPassword : Destination
+
+    /** [token] comes from the emailed `quizgame://reset-password?token=...` link, and is empty
+     * when the user opened the screen to type the code in by hand. */
+    @Serializable
+    data class ResetPassword(val token: String) : Destination
 }
 
 data class BottomNavItem(

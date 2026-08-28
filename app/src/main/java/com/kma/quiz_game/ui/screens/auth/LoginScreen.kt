@@ -2,6 +2,7 @@ package com.kma.quiz_game.ui.screens.auth
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -36,10 +38,16 @@ import com.kma.quiz_game.BuildConfig
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
+import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Rose500
 
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit) {
+fun LoginScreen(
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
+    /** Message carried over from another screen in the auth flow, e.g. a completed reset. */
+    notice: String? = null,
+) {
     val context = LocalContext.current
     val app = context.applicationContext as DuoGameApplication
     val viewModel: LoginViewModel = viewModel(
@@ -89,6 +97,16 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
         Text(text = "Đăng nhập", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(32.dp))
 
+        notice?.let { message ->
+            Text(
+                text = message,
+                color = Green500,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         OutlinedTextField(
             value = uiState.email,
             onValueChange = viewModel::onEmailChange,
@@ -108,12 +126,18 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
 
-        uiState.errorMessage?.let { message ->
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = message, color = Rose500, style = MaterialTheme.typography.bodyMedium)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = onNavigateToForgotPassword) {
+                Text("Quên mật khẩu?")
+            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        uiState.errorMessage?.let { message ->
+            Text(text = message, color = Rose500, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
         DuoButton(
             text = if (uiState.isSubmitting) "Đang đăng nhập..." else "Đăng nhập",
             onClick = viewModel::login,
