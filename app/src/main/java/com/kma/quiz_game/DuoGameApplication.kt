@@ -15,6 +15,7 @@ import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.ChallengeRepository
 import com.kma.quiz_game.data.repository.DuoRepository
 import com.kma.quiz_game.data.repository.LearnRepository
+import com.kma.quiz_game.data.repository.ProfileRepository
 import com.kma.quiz_game.data.repository.UserProgressRepository
 
 class DuoGameApplication : Application() {
@@ -34,6 +35,8 @@ class DuoGameApplication : Application() {
     private val progressApi: ProgressApi by lazy { authenticatedRetrofit.create(ProgressApi::class.java) }
 
     val authRepository: AuthRepository by lazy { AuthRepository(authApi, usersApi, tokenStore) }
+
+    val profileRepository: ProfileRepository by lazy { ProfileRepository(usersApi) }
 
     val learnRepository: LearnRepository by lazy {
         LearnRepository(contentApi, progressApi, database.courseContentDao())
@@ -69,5 +72,6 @@ class DuoGameApplication : Application() {
     suspend fun logout() {
         duoRepository.disconnect()
         authRepository.logout()
+        profileRepository.clear()
     }
 }

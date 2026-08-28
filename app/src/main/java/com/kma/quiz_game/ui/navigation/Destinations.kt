@@ -2,10 +2,12 @@ package com.kma.quiz_game.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Leaderboard
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.outlined.Leaderboard
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Storefront
@@ -40,6 +42,13 @@ sealed interface Destination {
     data object Shop : Destination
 
     @Serializable
+    data object Profile : Destination
+
+    /** Full screen: it owns the keyboard, and the bottom bar would sit on top of it. */
+    @Serializable
+    data object EditProfile : Destination
+
+    @Serializable
     data class Lesson(val lessonId: String) : Destination
 
     @Serializable
@@ -70,4 +79,5 @@ val BOTTOM_NAV_ITEMS = listOf(
     BottomNavItem(Destination.Duo, "Duo", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports),
     BottomNavItem(Destination.Leaderboard, "Ranking", Icons.Filled.Leaderboard, Icons.Outlined.Leaderboard),
     BottomNavItem(Destination.Shop, "Shop", Icons.Filled.Storefront, Icons.Outlined.Storefront),
+    BottomNavItem(Destination.Profile, "Hồ sơ", Icons.Filled.Person, Icons.Outlined.Person),
 )

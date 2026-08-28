@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kma.quiz_game.data.remote.dto.DuoPlayerDto
+import com.kma.quiz_game.ui.components.UserAvatar
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Neutral050
 import com.kma.quiz_game.ui.theme.Neutral500
@@ -105,9 +106,10 @@ private fun PlayerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        InitialsAvatar(
+        UserAvatar(
             userId = player?.id ?: fallbackName,
             username = player?.username ?: fallbackName,
+            avatarUrl = player?.avatarUrl,
             size = 44.dp,
         )
         Spacer(Modifier.height(4.dp))

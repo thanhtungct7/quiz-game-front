@@ -30,6 +30,8 @@ import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
 import com.kma.quiz_game.ui.screens.placeholder.PlaceholderScreen
+import com.kma.quiz_game.ui.screens.profile.EditProfileScreen
+import com.kma.quiz_game.ui.screens.profile.ProfileScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -83,7 +85,6 @@ fun DuoNavHost() {
             composable<Destination.Learn> {
                 LearnScreen(
                     onLessonClick = { lessonId -> navController.navigate(Destination.Lesson(lessonId)) },
-                    onLogout = { coroutineScope.launch { app.logout() } },
                 )
             }
             composable<Destination.Leaderboard> {
@@ -120,6 +121,15 @@ fun DuoNavHost() {
                     matchId = route.matchId,
                     onBack = { navController.popBackStack() },
                 )
+            }
+            composable<Destination.Profile> {
+                ProfileScreen(
+                    onEditProfile = { navController.navigate(Destination.EditProfile) },
+                    onLogout = { coroutineScope.launch { app.logout() } },
+                )
+            }
+            composable<Destination.EditProfile> {
+                EditProfileScreen(onDone = { navController.popBackStack() })
             }
             composable<Destination.Shop> {
                 PlaceholderScreen(title = "Shop", subtitle = "Coming in the next iteration")

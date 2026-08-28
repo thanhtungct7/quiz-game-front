@@ -11,6 +11,7 @@ import com.kma.quiz_game.ui.screens.duo.DuoMatchViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoResultViewModel
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardViewModel
 import com.kma.quiz_game.ui.screens.learn.LearnViewModel
+import com.kma.quiz_game.ui.screens.profile.ProfileViewModel
 
 /**
  * Builds the ViewModels whose dependencies are all application-scoped singletons.
@@ -39,6 +40,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
             DuoResultViewModel::class.java -> DuoResultViewModel(app.duoRepository) as T
 
             DuoHistoryViewModel::class.java -> DuoHistoryViewModel(app.duoRepository) as T
+
+            ProfileViewModel::class.java -> ProfileViewModel(app.profileRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

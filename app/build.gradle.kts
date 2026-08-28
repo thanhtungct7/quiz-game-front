@@ -77,6 +77,8 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.google.play.services.auth)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

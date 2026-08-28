@@ -28,9 +28,9 @@ private val AVATAR_PALETTE = listOf(Green500, Sky500, Orange400, Indigo500, Rose
 /**
  * A player's avatar as their initial on a colour picked from their id.
  *
- * `avatar_url` only ever exists for Google accounts, and pulling in an image-loading library for
- * that one case is not worth the dependency -- a stable per-user colour reads just as well in a
- * leaderboard row or a versus header.
+ * The fallback half of [com.kma.quiz_game.ui.components.UserAvatar]: what a user without a
+ * picture gets, and what is shown while one is loading. Prefer `UserAvatar` at call sites --
+ * this is only the right thing directly when there is no avatar URL to be had.
  */
 @Composable
 fun InitialsAvatar(

@@ -9,12 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,7 +37,6 @@ import com.kma.quiz_game.ui.rememberAppViewModelFactory
 @Composable
 fun LearnScreen(
     onLessonClick: (String) -> Unit,
-    onLogout: () -> Unit,
     factory: AppViewModelFactory = rememberAppViewModelFactory(),
     viewModel: LearnViewModel = viewModel(factory = factory),
 ) {
@@ -73,9 +69,6 @@ fun LearnScreen(
                     isPro = uiState.isPro,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = onLogout) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Đăng xuất")
-                }
             }
         }
         LazyColumn(

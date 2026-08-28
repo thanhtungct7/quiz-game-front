@@ -35,7 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.remote.dto.DuoLeaderboardEntryDto
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
-import com.kma.quiz_game.ui.components.duo.InitialsAvatar
+import com.kma.quiz_game.ui.components.UserAvatar
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Neutral050
@@ -149,9 +149,10 @@ private fun Podium(top: List<DuoLeaderboardEntryDto>, myUserId: String?) {
                 modifier = Modifier.width(96.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                InitialsAvatar(
+                UserAvatar(
                     userId = entry.userId,
                     username = entry.username,
+                    avatarUrl = entry.avatarUrl,
                     size = if (slot == 1) 64.dp else 52.dp,
                     highlighted = entry.userId == myUserId,
                 )
@@ -207,7 +208,7 @@ private fun LeaderboardRow(entry: DuoLeaderboardEntryDto, isMe: Boolean) {
                 color = Neutral500,
                 modifier = Modifier.width(36.dp),
             )
-            InitialsAvatar(entry.userId, entry.username, size = 36.dp)
+            UserAvatar(entry.userId, entry.username, entry.avatarUrl, size = 36.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

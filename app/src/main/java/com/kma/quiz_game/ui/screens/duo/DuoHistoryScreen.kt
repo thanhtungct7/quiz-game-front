@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.remote.dto.DuoMatchSummaryDto
 import com.kma.quiz_game.data.remote.dto.MatchOutcome
-import com.kma.quiz_game.ui.components.duo.InitialsAvatar
+import com.kma.quiz_game.ui.components.UserAvatar
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Neutral050
@@ -130,9 +130,10 @@ private fun MatchRow(match: DuoMatchSummaryDto, onClick: () -> Unit) {
         ) {
             OutcomeBadge(match.outcome)
             Spacer(Modifier.width(12.dp))
-            InitialsAvatar(
+            UserAvatar(
                 userId = match.opponent?.id ?: match.matchId,
                 username = match.opponent?.username,
+                avatarUrl = match.opponent?.avatarUrl,
                 size = 36.dp,
             )
             Spacer(Modifier.width(12.dp))
