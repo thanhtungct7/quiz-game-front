@@ -5,10 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.kma.quiz_game.data.remote.dto.DuoRoomPreviewDto
 import com.kma.quiz_game.data.remote.dto.DuoSettingsDto
 import com.kma.quiz_game.data.remote.dto.DuoStatsDto
+import com.kma.quiz_game.data.remote.dto.GameProfileDto
+import com.kma.quiz_game.data.remote.dto.SeasonDto
 import com.kma.quiz_game.data.remote.toUserMessage
 import com.kma.quiz_game.data.repository.DuoRepository
 import com.kma.quiz_game.data.repository.DuoRepository.Companion.normalizeRoomCode
 import com.kma.quiz_game.data.repository.DuoSession
+import com.kma.quiz_game.data.repository.GameRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,9 @@ import kotlinx.coroutines.launch
 data class DuoHomeUiState(
     val session: DuoSession = DuoSession(),
     val stats: DuoStatsDto? = null,
+    val profile: GameProfileDto? = null,
+    val season: SeasonDto? = null,
+    val showOutOfEnergy: Boolean = false,
     val isLoadingStats: Boolean = true,
     /** The draft settings the next match will be opened with. */
     val settings: DuoSettingsDto = DuoSettingsDto(),
@@ -33,21 +39,52 @@ data class DuoHomeUiState(
 ) {
     val canJoinRoom: Boolean
         get() = roomCodeInput.length == DuoRepository.ROOM_CODE_LENGTH && !isPreviewingRoom
+
+    /**
+     * False only when the profile has actually loaded and says the bar is empty.
+     *
+     * Erring towards "let them try" is deliberate: energy is taken server-side after the question
+     * draw succeeds, so a client that guesses wrong costs nothing, while a client that blocks on a
+     * profile it failed to load would lock a player out of a match they can afford.
+     */
+    val hasEnergy: Boolean get() = profile?.energy?.isEmpty != true
 }
 
-class DuoHomeViewModel(private val duoRepository: DuoRepository) : ViewModel() {
+class DuoHomeViewModel(
+    private val duoRepository: DuoRepository,
+    private val gameRepository: GameRepository,
+) : ViewModel() {
 
     private val local = MutableStateFlow(DuoHomeUiState())
 
     val uiState: StateFlow<DuoHomeUiState> =
-        combine(duoRepository.session, local) { session, state -> state.copy(session = session) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DuoHomeUiState())
+        combine(duoRepository.session, local, gameRepository.profile) { session, state, profile ->
+            state.copy(session = session, profile = profile)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            // Same reason as DuoMatchViewModel: a blank seed reports IDLE for one frame, which
+            // re-keys the lobby's phase effect and fires `onMatchStarting` a second time.
+            DuoHomeUiState(
+                session = duoRepository.session.value,
+                profile = gameRepository.profile.value,
+            ),
+        )
 
     init {
         // Opening the socket up front means the lobby already knows who we are, and picks up an
         // `active_match_id` if a match from a previous run of the app is still waiting for us.
         duoRepository.connect()
         refreshStats()
+    }
+
+    /** Re-read on every visit: a match just played moves energy, level, gold and the ladder. */
+    fun refreshProfile() {
+        viewModelScope.launch {
+            gameRepository.refreshProfile()
+            gameRepository.currentSeason()
+                .onSuccess { season -> local.update { it.copy(season = season) } }
+        }
     }
 
     fun refreshStats() {
@@ -64,7 +101,30 @@ class DuoHomeViewModel(private val duoRepository: DuoRepository) : ViewModel() {
     /** Manual retry after the socket has exhausted its own reconnect attempts. */
     fun reconnect() = duoRepository.connect()
 
-    fun findMatch() = duoRepository.joinQueue(uiState.value.settings)
+    /**
+     * Queueing costs one energy out of five.
+     *
+     * Refused here rather than by the server so the answer is instant and, more importantly, so it
+     * can carry the way *out* of an empty bar: finishing a lesson refills two, which is the loop
+     * the whole energy system exists to push.
+     */
+    fun findMatch() {
+        if (!uiState.value.hasEnergy) {
+            local.update { it.copy(showOutOfEnergy = true) }
+            return
+        }
+        duoRepository.joinQueue(uiState.value.settings)
+    }
+
+    fun createRoomChecked() {
+        if (!uiState.value.hasEnergy) {
+            local.update { it.copy(showOutOfEnergy = true) }
+            return
+        }
+        createRoom()
+    }
+
+    fun dismissOutOfEnergy() = local.update { it.copy(showOutOfEnergy = false) }
 
     fun cancelQueue() = duoRepository.leaveQueue()
 

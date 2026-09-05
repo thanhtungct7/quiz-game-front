@@ -2,8 +2,10 @@ package com.kma.quiz_game.data.repository
 
 import com.kma.quiz_game.data.remote.DuoSocket
 import com.kma.quiz_game.data.remote.api.DuoApi
+import com.kma.quiz_game.data.remote.dto.AnswerResultDto
 import com.kma.quiz_game.data.remote.dto.ChallengeDto
 import com.kma.quiz_game.data.remote.dto.ChatMessageDto
+import com.kma.quiz_game.data.remote.dto.DuoActiveEffectDto
 import com.kma.quiz_game.data.remote.dto.DuoClientEvent
 import com.kma.quiz_game.data.remote.dto.DuoErrorCode
 import com.kma.quiz_game.data.remote.dto.DuoEvent
@@ -13,9 +15,11 @@ import com.kma.quiz_game.data.remote.dto.DuoMatchSummaryDto
 import com.kma.quiz_game.data.remote.dto.DuoPlayerDto
 import com.kma.quiz_game.data.remote.dto.DuoRoomPreviewDto
 import com.kma.quiz_game.data.remote.dto.DuoSettingsDto
+import com.kma.quiz_game.data.remote.dto.DuoSkillUsedDto
 import com.kma.quiz_game.data.remote.dto.DuoStatsDto
+import com.kma.quiz_game.data.remote.dto.LeaderboardScope
 import com.kma.quiz_game.data.remote.dto.MatchFinishedDto
-import com.kma.quiz_game.data.remote.dto.RoundResultDto
+import com.kma.quiz_game.data.remote.dto.OpponentAnsweredDto
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,8 +36,22 @@ import kotlinx.serialization.json.put
 
 enum class ConnectionState { DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING }
 
-/** Where a duo session currently is. Flat on purpose: the reducer stays readable and testable. */
-enum class DuoPhase { IDLE, QUEUEING, ROOM_WAITING, MATCHED, IN_ROUND, ROUND_REVEAL, FINISHED }
+/**
+ * The mana ceiling, from `app/services/game/combat.py`.
+ *
+ * Duplicated here only to draw a bar as a fraction: every mana number that matters is computed on
+ * the server and arrives on the wire, and nothing the client does is gated on this value.
+ */
+const val MAX_MANA = 100
+
+/**
+ * Where a duo session currently is.
+ *
+ * Five states, not seven: the old IN_ROUND / ROUND_REVEAL pair described whose turn it was, and
+ * nobody takes turns any more. Whether a question is on screen is [DuoSession.hasQuestion], and it
+ * flips many times inside one FIGHTING phase, independently of what the opponent is doing.
+ */
+enum class DuoPhase { IDLE, QUEUEING, ROOM_WAITING, MATCHED, FIGHTING, FINISHED }
 
 /**
  * The whole client-side view of a duo session.
@@ -41,6 +59,11 @@ enum class DuoPhase { IDLE, QUEUEING, ROOM_WAITING, MATCHED, IN_ROUND, ROUND_REV
  * Deliberately a single flat immutable snapshot rather than per-screen state: matchmaking, the
  * match itself and the result screen are three destinations reading one live session, and the
  * session has to survive navigating between them.
+ *
+ * Every instant here -- [deadlineAt], [lockoutEndsAt], [stunnedUntil] -- is on the *server's*
+ * clock, and [serverOffsetMs] is what converts a local `elapsedRealtime` reading to it. Storing
+ * deadlines rather than countdowns is what lets the arena draw at 60 fps from a feed that arrives
+ * ten times a second.
  */
 data class DuoSession(
     val connection: ConnectionState = ConnectionState.DISCONNECTED,
@@ -56,31 +79,110 @@ data class DuoSession(
     val queuePosition: Int = 0,
     val queueWaitedSeconds: Int = 0,
     val queueTimedOut: Boolean = false,
-    val roundIndex: Int = 0,
-    val totalRounds: Int = 0,
+
+    // --- the deck ----------------------------------------------------------
+    /** How many questions the match was drawn with. Both decks start this long. */
+    val deckSize: Int = 0,
+    /** How many this player still has to get right, the one on screen included. */
+    val myDeckRemaining: Int = 0,
+    val opponentDeckRemaining: Int = 0,
+    /** The token that answers the question on screen. Null between two questions. */
+    val questionToken: String? = null,
     val question: ChallengeDto? = null,
-    /** Seconds the current round started with -- the full limit normally, or whatever was left
-     * when a `match.resume` rebuilt the round after a reconnect. */
-    val roundSecondsRemaining: Int = 0,
+    /** True when this question is coming round again after a wrong answer. */
+    val questionRetry: Boolean = false,
     val myOptionId: String? = null,
-    val opponentAnswered: Boolean = false,
+    val answerResult: AnswerResultDto? = null,
+
+    // --- combat ------------------------------------------------------------
     val myScore: Int = 0,
     val opponentScore: Int = 0,
-    val roundResult: RoundResultDto? = null,
+    val myHp: Int = 0,
+    val opponentHp: Int = 0,
+    val myMaxHp: Int = 0,
+    val opponentMaxHp: Int = 0,
+    val mana: Int = 0,
+    val combo: Int = 0,
+    val opponentCombo: Int = 0,
+    /**
+     * The last blow the opponent landed on us, with a counter beside it.
+     *
+     * The counter is what makes it an event rather than a state: two identical blows in a row are
+     * two things to animate, and comparing the payloads alone would miss the second.
+     */
+    val lastIncoming: OpponentAnsweredDto? = null,
+    val incomingSeq: Int = 0,
+    /** The last cast either side made, and the same counter trick. */
+    val lastSkill: DuoSkillUsedDto? = null,
+    val skillSeq: Int = 0,
+    /** Wrong options a REMOVE_OPTIONS skill hid from us. Cleared on every new question. */
+    val removedOptionIds: List<String> = emptyList(),
+    val effects: List<DuoActiveEffectDto> = emptyList(),
+
+    // --- the clock ---------------------------------------------------------
+    /** Add to a local `elapsedRealtime` reading to get the server's clock. */
+    val serverOffsetMs: Long = 0,
+    /** When the match is decided on health if nobody has fallen or cleared their deck. */
+    val deadlineAt: Long = 0,
+    /** While this is in the future the player is reading the last result. */
+    val lockoutEndsAt: Long = 0,
+    /** While this is in the future the player cannot answer or cast. */
+    val stunnedUntil: Long = 0,
+    val roundTripMs: Long = 0,
+
     val opponentConnected: Boolean = true,
     val opponentGraceSeconds: Int = 0,
     val finished: MatchFinishedDto? = null,
     val chat: List<ChatMessageDto> = emptyList(),
     val lastError: DuoErrorCode? = null,
+    /**
+     * Bumped on every error frame.
+     *
+     * The same code twice in a row -- two taps on a skill with no mana -- is two events the screen
+     * has to flash twice, but [lastError] alone does not change, so a state comparison would miss
+     * the second one. Kept pure (a counter, not a clock) so the reducer stays testable.
+     */
+    val errorSeq: Int = 0,
 ) {
     val isHost: Boolean get() = me != null && me.id == hostId
 
-    /** True once an answer is locked in for this round, or the round has already been revealed. */
-    val hasAnswered: Boolean get() = myOptionId != null || phase == DuoPhase.ROUND_REVEAL
+    val hasQuestion: Boolean get() = questionToken != null
+
+    /** True once an answer is locked in, or while the result of the last one is on screen. */
+    val hasAnswered: Boolean get() = myOptionId != null
 
     val isInMatch: Boolean
-        get() = phase == DuoPhase.MATCHED || phase == DuoPhase.IN_ROUND ||
-            phase == DuoPhase.ROUND_REVEAL
+        get() = phase == DuoPhase.MATCHED || phase == DuoPhase.FIGHTING
+
+    val myHpFraction: Float get() = if (myMaxHp <= 0) 0f else myHp.toFloat() / myMaxHp
+
+    val opponentHpFraction: Float
+        get() = if (opponentMaxHp <= 0) 0f else opponentHp.toFloat() / opponentMaxHp
+
+    val manaFraction: Float get() = (mana.toFloat() / MAX_MANA).coerceIn(0f, 1f)
+
+    /** How many of this player's questions are already behind them. */
+    val myCleared: Int get() = (deckSize - myDeckRemaining).coerceAtLeast(0)
+
+    val opponentCleared: Int get() = (deckSize - opponentDeckRemaining).coerceAtLeast(0)
+
+    /** The server's clock, from a local `elapsedRealtime` reading. */
+    fun serverNowMs(localNowMs: Long): Long = localNowMs + serverOffsetMs
+
+    /** True while the player is reading the last result and no question is up yet. */
+    fun inLockout(localNowMs: Long): Boolean =
+        lockoutEndsAt > 0 && serverNowMs(localNowMs) < lockoutEndsAt
+
+    fun isStunned(localNowMs: Long): Boolean =
+        stunnedUntil > 0 && serverNowMs(localNowMs) < stunnedUntil
+
+    /** Milliseconds left on the match clock. Zero once it is up, or while it is unknown. */
+    fun matchRemainingMs(localNowMs: Long): Long =
+        if (deadlineAt <= 0) 0 else (deadlineAt - serverNowMs(localNowMs)).coerceAtLeast(0)
+
+    /** True while a skill may be cast at all -- a running match we are not sitting out. */
+    fun canCastSkill(localNowMs: Long): Boolean =
+        phase == DuoPhase.FIGHTING && !isStunned(localNowMs)
 }
 
 /**
@@ -162,19 +264,46 @@ class DuoRepository(
     }
 
     /**
-     * Answers are timed by the server from the moment it sent `round.start`, so this fires on the
-     * tap itself -- there is no confirm step to spend the speed bonus on.
+     * Answers the question on screen.
+     *
+     * Fires on the tap itself: the server times the answer from the moment it pushed *this player*
+     * the question and a faster answer hits harder, so a confirm step would spend the speed bonus
+     * on a second thought. The token is the session's own -- a caller cannot answer a question
+     * that has already closed.
      */
-    fun submitAnswer(roundIndex: Int, optionId: String) {
+    fun submitAnswer(optionId: String) {
         val current = _session.value
-        if (current.phase != DuoPhase.IN_ROUND || current.myOptionId != null) return
+        val token = current.questionToken ?: return
+        if (current.myOptionId != null) return
         _session.update { it.copy(myOptionId = optionId) }
         socket.send(
             DuoClientEvent.ANSWER_SUBMIT,
             buildJsonObject {
-                put("round_index", roundIndex)
+                put("token", token)
                 put("option_id", optionId)
             },
+        )
+    }
+
+    /**
+     * Casts an equipped skill.
+     *
+     * Unlike answering, this is not tied to a question: a shield or a heal is worth casting while
+     * the player is reading the last explanation and the opponent is still swinging.
+     */
+    fun useSkill(skillCode: String) {
+        if (_session.value.phase != DuoPhase.FIGHTING) return
+        socket.send(
+            DuoClientEvent.SKILL_USE,
+            buildJsonObject { put("skill_code", skillCode) },
+        )
+    }
+
+    /** Measures the round trip and keeps the clock offset honest between snapshots. */
+    fun ping(nowMs: Long) {
+        socket.send(
+            DuoClientEvent.PING,
+            buildJsonObject { put("client_time_ms", nowMs) },
         )
     }
 
@@ -202,7 +331,14 @@ class DuoRepository(
         socket.send(DuoClientEvent.CHAT_SEND, buildJsonObject { put("message", trimmed) })
     }
 
-    /** Called once the result screen has been seen, returning the session to the lobby. */
+    /**
+     * Called once the result screen has been seen, returning the session to the lobby.
+     *
+     * Rebuilding from a fresh [DuoSession] rather than copying is what clears the combat state:
+     * health, mana, combo, the deck and the standing effects all belong to the match that just
+     * ended, and carrying any of them into the next lobby would draw a half-empty health bar over
+     * a match that has not started.
+     */
     fun acknowledgeResult() {
         _session.update {
             DuoSession(
@@ -221,8 +357,10 @@ class DuoRepository(
 
     suspend fun stats(): Result<DuoStatsDto> = runCatching { duoApi.getMyStats() }
 
-    suspend fun leaderboard(limit: Int = DEFAULT_LEADERBOARD_LIMIT): Result<DuoLeaderboardDto> =
-        runCatching { duoApi.getLeaderboard(limit) }
+    suspend fun leaderboard(
+        limit: Int = DEFAULT_LEADERBOARD_LIMIT,
+        scope: String = LeaderboardScope.CURRENT,
+    ): Result<DuoLeaderboardDto> = runCatching { duoApi.getLeaderboard(limit, scope) }
 
     suspend fun matches(limit: Int = DEFAULT_HISTORY_PAGE, offset: Int = 0): Result<List<DuoMatchSummaryDto>> =
         runCatching { duoApi.listMatches(limit, offset) }
@@ -298,64 +436,158 @@ class DuoRepository(
                 opponent = event.data.opponent,
                 settings = event.data.settings,
                 hostId = event.data.hostId,
-                totalRounds = event.data.settings.questionCount,
                 myScore = 0,
                 opponentScore = 0,
-                roundIndex = 0,
                 opponentConnected = true,
                 finished = null,
                 chat = emptyList(),
-            )
-
-            is DuoEvent.MatchStarted -> state.copy(
-                phase = DuoPhase.MATCHED,
-                matchId = event.data.matchId,
-                totalRounds = event.data.totalRounds,
-            )
-
-            is DuoEvent.RoundStart -> state.copy(
-                phase = DuoPhase.IN_ROUND,
-                roundIndex = event.data.roundIndex,
-                totalRounds = event.data.totalRounds,
-                question = event.data.question,
-                roundSecondsRemaining = event.data.timeLimitSeconds,
+                // Everything the last match left behind. A stale pair of bars drawn over a new
+                // opponent's face is worse than an empty one.
+                deckSize = 0,
+                myDeckRemaining = 0,
+                opponentDeckRemaining = 0,
+                questionToken = null,
+                question = null,
+                questionRetry = false,
                 myOptionId = null,
-                opponentAnswered = false,
-                roundResult = null,
+                answerResult = null,
+                myHp = 0,
+                opponentHp = 0,
+                myMaxHp = 0,
+                opponentMaxHp = 0,
+                mana = 0,
+                combo = 0,
+                opponentCombo = 0,
+                lastIncoming = null,
+                lastSkill = null,
+                removedOptionIds = emptyList(),
+                effects = emptyList(),
+                deadlineAt = 0,
+                lockoutEndsAt = 0,
+                stunnedUntil = 0,
             )
 
-            is DuoEvent.OpponentAnswered ->
-                if (event.data.roundIndex == state.roundIndex) state.copy(opponentAnswered = true)
-                else state
+            // The one frame that states both maximums outright, and the first that carries the
+            // server's clock -- the arena cannot draw a deadline before it knows the offset.
+            is DuoEvent.MatchStarted -> state.copy(
+                phase = DuoPhase.FIGHTING,
+                matchId = event.data.matchId,
+                serverOffsetMs = event.data.serverTimeMs - event.receivedAtMs,
+                deckSize = event.data.deckSize,
+                myDeckRemaining = event.data.deckSize,
+                opponentDeckRemaining = event.data.deckSize,
+                deadlineAt = event.data.deadlineAt,
+                myHp = event.data.yourHp,
+                myMaxHp = event.data.yourMaxHp,
+                opponentHp = event.data.opponentHp,
+                opponentMaxHp = event.data.opponentMaxHp,
+                mana = event.data.yourMana,
+                combo = 0,
+                opponentCombo = 0,
+                lockoutEndsAt = 0,
+                stunnedUntil = 0,
+            )
 
-            is DuoEvent.RoundResult -> state.copy(
-                phase = DuoPhase.ROUND_REVEAL,
-                roundIndex = event.data.roundIndex,
-                roundResult = event.data,
+            is DuoEvent.QuestionPush -> state.copy(
+                phase = DuoPhase.FIGHTING,
+                questionToken = event.data.token,
+                question = event.data.question,
+                questionRetry = event.data.retry,
+                myDeckRemaining = event.data.deckRemaining,
+                myOptionId = null,
+                answerResult = null,
+                // A skill's reveal only applies to the question it was cast on.
+                removedOptionIds = emptyList(),
+            )
+
+            /**
+             * Closes the question the moment the result lands. Note what is not copied: our own
+             * health. An answer cannot cost health any more, and taking it from here would let a
+             * stale frame undo a blow the opponent has already landed.
+             */
+            is DuoEvent.AnswerResult -> state.copy(
+                questionToken = null,
+                answerResult = event.data,
+                myOptionId = event.data.optionId,
                 myScore = event.data.yourScore,
+                mana = event.data.yourMana,
+                combo = event.data.yourCombo,
+                myDeckRemaining = event.data.yourDeckRemaining,
+                opponentHp = event.data.opponentHp,
+                lockoutEndsAt = event.data.lockoutEndsAt,
+            )
+
+            // The blow has already landed on the server; this is not a prediction.
+            is DuoEvent.OpponentAnswered -> state.copy(
+                myHp = event.data.yourHp,
                 opponentScore = event.data.opponentScore,
-                myOptionId = event.data.you.optionId ?: state.myOptionId,
+                opponentCombo = event.data.opponentCombo,
+                opponentDeckRemaining = event.data.opponentDeckRemaining,
+                stunnedUntil = maxOf(state.stunnedUntil, event.data.yourStunnedUntil),
+                lastIncoming = event.data,
+                incomingSeq = state.incomingSeq + 1,
+            )
+
+            /**
+             * The snapshot is authoritative for every bar on screen, and it is also where the
+             * clock offset comes from -- recomputed on every frame rather than negotiated once, so
+             * a device that sleeps mid-match corrects itself within a tenth of a second.
+             */
+            is DuoEvent.StateTick -> state.copy(
+                phase = if (state.phase == DuoPhase.FINISHED) state.phase else DuoPhase.FIGHTING,
+                serverOffsetMs = event.data.t - event.receivedAtMs,
+                myHp = event.data.yourHp,
+                myMaxHp = event.data.yourMaxHp,
+                mana = event.data.yourMana,
+                combo = event.data.yourCombo,
+                myScore = event.data.yourScore,
+                myDeckRemaining = event.data.yourDeckRemaining,
+                opponentHp = event.data.opponentHp,
+                opponentMaxHp = event.data.opponentMaxHp,
+                opponentCombo = event.data.opponentCombo,
+                opponentScore = event.data.opponentScore,
+                opponentDeckRemaining = event.data.opponentDeckRemaining,
+                deadlineAt = event.data.deadlineAt,
+                lockoutEndsAt = event.data.lockoutEndsAt,
+                stunnedUntil = event.data.stunnedUntil,
+                effects = event.data.effects,
             )
 
             // Reconnected mid-match: rebuild the screen from the server's version of the truth,
-            // including how much of the round's clock is actually left.
+            // the question that was on screen included.
             is DuoEvent.MatchResume -> state.copy(
                 connection = ConnectionState.CONNECTED,
-                phase = if (event.data.question != null) DuoPhase.IN_ROUND else DuoPhase.MATCHED,
+                phase = DuoPhase.FIGHTING,
                 matchId = event.data.matchId,
                 opponent = event.data.opponent,
                 settings = event.data.settings,
-                roundIndex = event.data.roundIndex,
-                totalRounds = event.data.totalRounds,
+                serverOffsetMs = event.data.serverTimeMs - event.receivedAtMs,
+                deckSize = event.data.deckSize,
+                myDeckRemaining = event.data.yourDeckRemaining,
+                opponentDeckRemaining = event.data.opponentDeckRemaining,
+                deadlineAt = event.data.deadlineAt,
+                questionToken = event.data.token,
+                question = event.data.question,
+                questionRetry = false,
+                // The option is not resent, so a question handed back still open is one this
+                // player has yet to answer.
+                myOptionId = null,
+                answerResult = null,
                 myScore = event.data.yourScore,
                 opponentScore = event.data.opponentScore,
-                question = event.data.question,
-                roundSecondsRemaining = event.data.secondsRemaining ?: 0,
-                // A resumed round we already answered must stay locked; the option id itself is
-                // not resent, so a non-null placeholder is what keeps the buttons disabled.
-                myOptionId = if (event.data.alreadyAnswered) RESUMED_ANSWER else null,
-                opponentAnswered = false,
-                roundResult = null,
+                myHp = event.data.yourHp,
+                myMaxHp = event.data.yourMaxHp,
+                opponentHp = event.data.opponentHp,
+                opponentMaxHp = event.data.opponentMaxHp,
+                mana = event.data.yourMana,
+                combo = event.data.yourCombo,
+                opponentCombo = event.data.opponentCombo,
+                lockoutEndsAt = event.data.lockoutEndsAt,
+                stunnedUntil = event.data.stunnedUntil,
+                effects = event.data.effects,
+                removedOptionIds = emptyList(),
+                lastIncoming = null,
+                lastSkill = null,
                 finished = null,
             )
 
@@ -371,30 +603,67 @@ class DuoRepository(
                 finished = event.data,
                 myScore = event.data.yourScore,
                 opponentScore = event.data.opponentScore,
+                myHp = event.data.yourHpLeft,
+                opponentHp = event.data.opponentHpLeft,
+                questionToken = null,
+                stunnedUntil = 0,
+            )
+
+            // Sent to both players. `private` arrives only for the caster, which is what carries
+            // the options a reveal hid from us.
+            is DuoEvent.SkillUsed -> state.copy(
+                myHp = event.data.yourHp,
+                opponentHp = event.data.opponentHp,
+                mana = event.data.yourMana,
+                // A TIME_PENALTY landing on us pushes this out, and the screen must say so at once
+                // rather than wait up to a tenth of a second for the next snapshot.
+                lockoutEndsAt = if (event.data.lockoutEndsAt > 0) event.data.lockoutEndsAt
+                else state.lockoutEndsAt,
+                lastSkill = event.data,
+                skillSeq = state.skillSeq + 1,
+                removedOptionIds = event.data.private?.removedOptionIds
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { state.removedOptionIds + it }
+                    ?: state.removedOptionIds,
             )
 
             is DuoEvent.Chat -> state.copy(chat = state.chat + event.data)
 
-            DuoEvent.Pong -> state
+            is DuoEvent.Pong -> state.copy(
+                roundTripMs = (event.receivedAtMs - event.data.clientTimeMs).coerceAtLeast(0),
+            )
 
-            // Losing a race to answer is routine, not something to interrupt the player over.
             is DuoEvent.Failed -> when (val code = event.data.errorCode) {
-                DuoErrorCode.ROUND_CLOSED, DuoErrorCode.ALREADY_ANSWERED -> state
+                // Tapping an option a beat after the question closed is routine, not something to
+                // interrupt the player over -- but the tap must be released, or the screen sits on
+                // a selected answer nothing will ever resolve.
+                DuoErrorCode.QUESTION_CLOSED, DuoErrorCode.INVALID_OPTION ->
+                    state.copy(myOptionId = null)
 
                 // The server closes an idle room with this error and then drops it, so sitting in
                 // the lobby afterwards would be waiting for a room that no longer exists.
                 DuoErrorCode.ROOM_NOT_FOUND -> if (state.phase == DuoPhase.ROOM_WAITING) {
-                    state.copy(phase = DuoPhase.IDLE, roomCode = null, opponent = null, lastError = code)
+                    state.copy(
+                        phase = DuoPhase.IDLE,
+                        roomCode = null,
+                        opponent = null,
+                        lastError = code,
+                        errorSeq = state.errorSeq + 1,
+                    )
                 } else {
-                    state.copy(lastError = code)
+                    state.copy(lastError = code, errorSeq = state.errorSeq + 1)
                 }
 
-                else -> state.copy(lastError = code)
+                // Energy is checked when we queue, so this refusal means the match never opened.
+                // Staying in QUEUEING would be waiting on a queue entry the server has dropped.
+                DuoErrorCode.NOT_ENOUGH_ENERGY -> state.copy(
+                    phase = DuoPhase.IDLE,
+                    lastError = code,
+                    errorSeq = state.errorSeq + 1,
+                )
+
+                else -> state.copy(lastError = code, errorSeq = state.errorSeq + 1)
             }
         }
-
-        /** Stands in for "an answer is already locked in" when resuming, where the server tells us
-         * that we answered but not what we picked. */
-        const val RESUMED_ANSWER = "__resumed__"
     }
 }

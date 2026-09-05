@@ -6,8 +6,12 @@ import com.kma.quiz_game.data.remote.dto.DuoErrorCode
  * Player-facing text for the socket's error codes.
  *
  * The server sends stable codes precisely so the client can branch on them; this is the one place
- * that turns them into words. `ROUND_CLOSED` and `ALREADY_ANSWERED` never reach here -- the
- * reducer swallows them, since losing a race to answer is normal play, not an error worth showing.
+ * that turns them into words. `QUESTION_CLOSED` rarely reaches here -- the reducer swallows it,
+ * since tapping a question that has already closed is normal play, not an error worth showing.
+ *
+ * The in-match nudges (`STUNNED`, `NOT_ENOUGH_MANA`, ...) are worded as short statements rather
+ * than apologies: they are flashed on the skill that was tapped, not raised in a dialog, and they
+ * happen many times a match. See [com.kma.quiz_game.data.remote.dto.DuoErrorCode.isInMatchNudge].
  */
 fun DuoErrorCode.toUserMessage(): String = when (this) {
     DuoErrorCode.INVALID_PAYLOAD -> "Dữ liệu gửi lên không hợp lệ."
@@ -21,9 +25,13 @@ fun DuoErrorCode.toUserMessage(): String = when (this) {
     DuoErrorCode.NOT_ENOUGH_PLAYERS -> "Cần đủ hai người mới bắt đầu được."
     DuoErrorCode.MATCH_ALREADY_STARTED -> "Trận đã bắt đầu rồi."
     DuoErrorCode.NOT_IN_MATCH -> "Bạn không ở trong trận nào."
-    DuoErrorCode.ROUND_CLOSED -> "Hiệp này đã kết thúc."
-    DuoErrorCode.ALREADY_ANSWERED -> "Bạn đã trả lời câu này rồi."
+    DuoErrorCode.QUESTION_CLOSED -> "Câu này đã đóng rồi."
     DuoErrorCode.INVALID_OPTION -> "Đáp án không thuộc câu hỏi này."
     DuoErrorCode.NO_QUESTIONS_AVAILABLE -> "Ngân hàng câu hỏi không đủ để mở trận."
+    DuoErrorCode.STUNNED -> "Bạn đang bị choáng, bỏ lượt này."
+    DuoErrorCode.SKILL_NOT_EQUIPPED -> "Kỹ năng này chưa được trang bị."
+    DuoErrorCode.SKILL_ON_COOLDOWN -> "Kỹ năng đang hồi."
+    DuoErrorCode.NOT_ENOUGH_MANA -> "Không đủ mana."
+    DuoErrorCode.NOT_ENOUGH_ENERGY -> "Hết lượt chơi. Học xong một bài được thêm 2 lượt."
     DuoErrorCode.UNKNOWN -> "Đã xảy ra lỗi không xác định."
 }

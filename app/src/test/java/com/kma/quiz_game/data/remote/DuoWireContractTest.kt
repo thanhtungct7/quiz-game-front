@@ -20,16 +20,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Decodes payloads captured from a real match against a running backend
- * (`app/src/test/resources/duo_wire_capture.json`) using the same serializer configuration the
- * app uses.
+ * Decodes `app/src/test/resources/duo_wire_capture.json` with the same serializer configuration
+ * the app uses.
  *
  * The point is to catch a DTO drifting away from the server's schema. The reducer tests build
- * their events by hand, so they would happily keep passing after the server renamed a field;
- * this fails instead, because [decodeDuoEvent] drops a frame it cannot parse and the assertions
- * here require every captured frame to survive.
+ * their events by hand, so they would happily keep passing after the server renamed a field; this
+ * fails instead, because [decodeDuoEvent] drops a frame it cannot parse and the assertions here
+ * require every frame in the fixture to survive.
  *
- * To refresh the fixture: run the backend, play a match, and re-capture the frames.
+ * That only works because the fixture is not typed out by hand either. It is generated from the
+ * backend's own response models -- the same `envelope(...)` the engine sends and the same models
+ * the routes return -- so renaming a field on the server and regenerating is what makes this fail:
+ *
+ *     cd duo-game-back
+ *     conda run -n backend python -m scripts.duo_wire_capture
  */
 class DuoWireContractTest {
 
@@ -68,13 +72,29 @@ class DuoWireContractTest {
         val byType = wsFrames().associate { (type, raw) -> type to json.decodeDuoEvent(raw) }
 
         // A question arrives with its options but never with the answer key.
-        val roundStart = byType["round.start"] as DuoEvent.RoundStart
-        assertTrue(roundStart.data.question.options.isNotEmpty())
-        assertTrue(roundStart.data.timeLimitSeconds > 0)
+        val push = byType["question.push"] as DuoEvent.QuestionPush
+        assertTrue(push.data.question.options.isNotEmpty())
+        assertTrue(push.data.token.isNotEmpty())
+        assertTrue(push.data.deckRemaining > 0)
 
-        // The answer is only revealed with the result.
-        val roundResult = byType["round.result"] as DuoEvent.RoundResult
-        assertTrue(roundResult.data.correctOptionIds.isNotEmpty())
+        // The answer is only revealed with the result, and only to the player who gave it.
+        val answer = byType["answer.result"] as DuoEvent.AnswerResult
+        assertTrue(answer.data.correctOptionIds.isNotEmpty())
+        assertEquals(push.data.token, answer.data.token)
+        assertNotNull(answer.data.blow)
+
+        // A blow the opponent landed reaches us as its own frame, already applied.
+        val incoming = byType["opponent.answered"] as DuoEvent.OpponentAnswered
+        assertTrue(incoming.data.damage > 0)
+
+        // Every absolute stamp is on one clock, and the snapshot is what pins it to ours.
+        val tick = byType["state.tick"] as DuoEvent.StateTick
+        assertTrue(tick.data.t > 0)
+        assertTrue(tick.data.deadlineAt > tick.data.t)
+        assertTrue(tick.data.yourDeckRemaining >= 0)
+
+        val started = byType["match.started"] as DuoEvent.MatchStarted
+        assertEquals(started.data.deckSize, tick.data.yourDeckRemaining + 1)
 
         val found = byType["match.found"] as DuoEvent.MatchFound
         assertNotNull(found.data.opponent)
@@ -107,7 +127,10 @@ class DuoWireContractTest {
         assertTrue(matches.isNotEmpty())
 
         val detail = json.decodeFromString(DuoMatchDetailDto.serializer(), rest.getValue("MATCH_DETAIL").toString())
-        assertEquals("the detail view needs one row per round", detail.questionCount, detail.rounds.size)
+        // No answer-by-answer replay any more -- what a detail still owes the screen is the
+        // health both sides finished on and every skill either of them fired.
+        assertTrue(detail.myHpLeft >= 0)
+        assertTrue(detail.skillUses.isNotEmpty())
 
         val stats = json.decodeFromString(DuoStatsDto.serializer(), rest.getValue("STATS").toString())
         assertEquals(stats.matchesPlayed, stats.wins + stats.losses + stats.draws)

@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,15 +36,31 @@ import com.kma.quiz_game.data.remote.dto.MatchOutcome
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.components.duo.RatingDeltaBadge
+import com.kma.quiz_game.ui.components.game.ExpReward
+import com.kma.quiz_game.ui.components.game.GoldReward
+import com.kma.quiz_game.ui.components.game.HpBar
+import com.kma.quiz_game.ui.components.game.LootReward
+import com.kma.quiz_game.ui.components.game.RewardCard
+import com.kma.quiz_game.ui.components.game.RewardRow
+import com.kma.quiz_game.ui.components.game.SeasonReward
+import com.kma.quiz_game.ui.components.game.StreakReward
+import com.kma.quiz_game.ui.components.game.TierBadge
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Neutral050
 import com.kma.quiz_game.ui.theme.Neutral500
 import com.kma.quiz_game.ui.theme.Neutral700
+import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Sky500
 
-/** How the match ended, including the Elo it moved. */
+/**
+ * How the match ended, and everything it paid.
+ *
+ * The order is deliberate and matches how a match is actually settled: what happened (outcome and
+ * health), then how it was scored, then what it moved -- rating, experience, gold, chest, season,
+ * streak, energy. Rating first among the rewards because it is the only one an opponent also felt.
+ */
 @Composable
 fun DuoResultScreen(
     onPlayAgain: () -> Unit,
@@ -62,20 +80,21 @@ fun DuoResultScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
         Image(
             painter = painterResource(
                 if (finished.result == MatchOutcome.LOSE) R.drawable.mascot_sad else R.drawable.mascot,
             ),
             contentDescription = null,
-            modifier = Modifier.size(140.dp),
+            modifier = Modifier.size(120.dp),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
-            text = finished.result.title(),
+            text = finished.title(),
             fontSize = 34.sp,
             fontWeight = FontWeight.Bold,
             color = finished.result.color(),
@@ -89,13 +108,52 @@ fun DuoResultScreen(
             )
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
+        HealthBoard(finished)
+
+        Spacer(Modifier.height(16.dp))
         ScoreBoard(finished)
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         RatingPanel(finished)
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
+        RewardCard {
+            finished.exp?.let { exp ->
+                ExpReward(
+                    delta = exp.delta,
+                    levelBefore = exp.levelBefore,
+                    levelAfter = exp.levelAfter,
+                    leveledUp = exp.leveledUp,
+                )
+            }
+            finished.gold?.let { gold -> GoldReward(delta = gold.delta) }
+            finished.streak?.let { streak ->
+                StreakReward(dayStreak = streak.dayStreak, extended = streak.extended)
+            }
+            // Energy is spent by the match, so what is left is what the lobby will offer next.
+            finished.energyLeft?.let { left -> RewardRow("Lượt còn lại", "$left", Orange400) }
+        }
+
+        finished.season?.let { season ->
+            Spacer(Modifier.height(12.dp))
+            RewardCard {
+                SeasonReward(
+                    seasonCode = season.seasonCode,
+                    ratingBefore = season.ratingBefore,
+                    ratingAfter = season.ratingAfter,
+                    tierAfter = season.tierAfter,
+                    promoted = season.promoted,
+                )
+            }
+        }
+
+        finished.loot?.let { loot ->
+            Spacer(Modifier.height(12.dp))
+            LootReward(name = loot.name, rarity = loot.rarity)
+        }
+
+        Spacer(Modifier.height(24.dp))
         DuoButton(
             text = "Đấu tiếp",
             onClick = {
@@ -116,6 +174,45 @@ fun DuoResultScreen(
     }
 }
 
+/**
+ * Health left on both sides.
+ *
+ * First among the boards because health is what the match was decided on: a knockout ends it
+ * outright, and every tie breaks on health before it ever looks at points.
+ */
+@Composable
+private fun HealthBoard(finished: MatchFinishedDto) {
+    val total = maxOf(finished.yourHpLeft, finished.opponentHpLeft, 1)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Neutral050)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        HealthRow("Máu của bạn", finished.yourHpLeft, finished.yourHpLeft.toFloat() / total, Green500)
+        HealthRow("Máu đối thủ", finished.opponentHpLeft, finished.opponentHpLeft.toFloat() / total, Sky500)
+    }
+}
+
+@Composable
+private fun HealthRow(label: String, hp: Int, fraction: Float, color: androidx.compose.ui.graphics.Color) {
+    Column {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge, color = Neutral500)
+            Text(
+                text = "$hp",
+                style = MaterialTheme.typography.titleMedium,
+                color = color,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        HpBar(fraction = fraction, color = color)
+    }
+}
+
 @Composable
 private fun ScoreBoard(finished: MatchFinishedDto) {
     Column(
@@ -127,7 +224,13 @@ private fun ScoreBoard(finished: MatchFinishedDto) {
     ) {
         ScoreRow("Điểm", "${finished.yourScore}", "${finished.opponentScore}")
         Spacer(Modifier.height(8.dp))
-        ScoreRow("Câu đúng", "${finished.yourCorrect}/${finished.totalRounds}", "${finished.opponentCorrect}/${finished.totalRounds}")
+        ScoreRow(
+            // How much of the deck each side actually cleared. A player only clears a question by
+            // getting it right, so this is the race as it finished.
+            label = "Đã xong",
+            mine = "${finished.yourCorrect}/${finished.deckSize}",
+            theirs = "${finished.opponentCorrect}/${finished.deckSize}",
+        )
         Spacer(Modifier.height(8.dp))
         ScoreRow("Thời lượng", "${finished.durationSeconds}s", "")
     }
@@ -175,13 +278,20 @@ private fun RatingPanel(finished: MatchFinishedDto) {
             )
             RatingDeltaBadge(finished.rating.delta)
         }
+        finished.season?.let { season ->
+            Spacer(Modifier.height(8.dp))
+            TierBadge(tier = season.tierAfter)
+        }
     }
 }
 
-private fun MatchOutcome.title(): String = when (this) {
-    MatchOutcome.WIN -> "Chiến thắng!"
-    MatchOutcome.LOSE -> "Thua rồi"
-    MatchOutcome.DRAW -> "Hoà"
+/** A knockout is a different kind of win and deserves its own word. */
+private fun MatchFinishedDto.title(): String = when {
+    result == MatchOutcome.WIN && endReason == DuoMatchEndReason.KNOCKOUT -> "Hạ gục!"
+    result == MatchOutcome.LOSE && endReason == DuoMatchEndReason.KNOCKOUT -> "Bị hạ gục"
+    result == MatchOutcome.WIN -> "Chiến thắng!"
+    result == MatchOutcome.LOSE -> "Thua rồi"
+    else -> "Hoà"
 }
 
 private fun MatchOutcome.color() = when (this) {
@@ -190,10 +300,19 @@ private fun MatchOutcome.color() = when (this) {
     MatchOutcome.DRAW -> Neutral700
 }
 
-/** COMPLETED is the ordinary case and needs no explanation; the others very much do. */
+/**
+ * How the match ended, in a sentence.
+ *
+ * COMPLETED belongs to the lock-step engine and can only appear on an old row in history; nothing
+ * finishes that way now.
+ */
 private fun DuoMatchEndReason.note(): String? = when (this) {
     DuoMatchEndReason.COMPLETED -> null
     DuoMatchEndReason.OPPONENT_LEFT -> "Đối thủ đã bỏ trận."
     DuoMatchEndReason.OPPONENT_TIMEOUT -> "Đối thủ mất kết nối quá lâu."
     DuoMatchEndReason.CANCELLED -> "Trận bị huỷ."
+    // The blow itself was already shown in the arena as it landed.
+    DuoMatchEndReason.KNOCKOUT -> "Một bên đã hết máu — trận kết thúc ngay tại đòn đó."
+    DuoMatchEndReason.DECK_CLEARED -> "Có người trả lời đúng hết cả bộ câu hỏi trước."
+    DuoMatchEndReason.TIME_UP -> "Hết giờ — ai còn nhiều máu hơn thì thắng."
 }

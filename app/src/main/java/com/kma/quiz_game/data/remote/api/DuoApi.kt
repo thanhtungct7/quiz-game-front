@@ -28,9 +28,17 @@ interface DuoApi {
     @GET("duo/me/stats")
     suspend fun getMyStats(): DuoStatsDto
 
-    /** Only players with at least one finished match appear, ordered by rating then wins. */
+    /**
+     * Only players with at least one finished match appear, ordered by rating then wins.
+     *
+     * [season] is `current` (the ladder that resets, the server's default) or `all_time` (the
+     * rating that never does). Passing null takes the server's default rather than guessing one.
+     */
     @GET("duo/leaderboard")
-    suspend fun getLeaderboard(@Query("limit") limit: Int? = null): DuoLeaderboardDto
+    suspend fun getLeaderboard(
+        @Query("limit") limit: Int? = null,
+        @Query("season") season: String? = null,
+    ): DuoLeaderboardDto
 
     /** Reads the in-memory room registry -- 404 once the room is gone or the match has started. */
     @GET("duo/rooms/{roomCode}")

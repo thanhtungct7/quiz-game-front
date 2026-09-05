@@ -1,5 +1,6 @@
 package com.kma.quiz_game.data.remote
 
+import android.os.SystemClock
 import android.util.Log
 import com.kma.quiz_game.BuildConfig
 import com.kma.quiz_game.data.remote.dto.DuoEvent
@@ -141,7 +142,12 @@ class DuoSocket(
                     }
 
                     override fun onMessage(webSocket: WebSocket, text: String) {
-                        json.decodeDuoEvent(text)?.let { _events.tryEmit(it) }
+                        // Stamped here, at the earliest point the frame exists on this device, so
+                        // the clock offset a snapshot yields is not polluted by however long the
+                        // reducer or the UI took to get to it. `elapsedRealtime` rather than the
+                        // wall clock: a match must not skip when the device syncs its time.
+                        val now = SystemClock.elapsedRealtime()
+                        json.decodeDuoEvent(text, now)?.let { _events.tryEmit(it) }
                     }
 
                     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {

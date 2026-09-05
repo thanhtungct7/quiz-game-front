@@ -27,16 +27,27 @@ sealed interface DuoEvent {
     data object QueueTimeout : DuoEvent
     data class RoomCreated(val data: RoomCreatedDto) : DuoEvent
     data class MatchFound(val data: MatchFoundDto) : DuoEvent
-    data class MatchStarted(val data: MatchStartedDto) : DuoEvent
-    data class RoundStart(val data: RoundStartDto) : DuoEvent
+    data class MatchStarted(val data: MatchStartedDto, val receivedAtMs: Long) : DuoEvent
+    data class QuestionPush(val data: QuestionPushDto) : DuoEvent
+    data class AnswerResult(val data: AnswerResultDto) : DuoEvent
     data class OpponentAnswered(val data: OpponentAnsweredDto) : DuoEvent
-    data class RoundResult(val data: RoundResultDto) : DuoEvent
-    data class MatchResume(val data: MatchResumeDto) : DuoEvent
+
+    /**
+     * The whole match, ten times a second.
+     *
+     * [receivedAtMs] is `SystemClock.elapsedRealtime()` at the moment the frame arrived on this
+     * device, stamped by the socket rather than the reducer. `data.t - receivedAtMs` is this
+     * device's offset from the server's clock, which is what turns every absolute stamp on the
+     * wire into something the arena can draw against.
+     */
+    data class StateTick(val data: DuoStateTickDto, val receivedAtMs: Long) : DuoEvent
+    data class MatchResume(val data: MatchResumeDto, val receivedAtMs: Long) : DuoEvent
     data class OpponentDisconnected(val data: OpponentDisconnectedDto) : DuoEvent
     data object OpponentReconnected : DuoEvent
     data class MatchFinished(val data: MatchFinishedDto) : DuoEvent
+    data class SkillUsed(val data: DuoSkillUsedDto) : DuoEvent
     data class Chat(val data: ChatMessageDto) : DuoEvent
-    data object Pong : DuoEvent
+    data class Pong(val data: DuoPongDto, val receivedAtMs: Long) : DuoEvent
     data class Failed(val data: ErrorDto) : DuoEvent
 }
 
@@ -50,6 +61,7 @@ object DuoClientEvent {
     const val ANSWER_SUBMIT = "answer.submit"
     const val MATCH_LEAVE = "match.leave"
     const val CHAT_SEND = "chat.send"
+    const val SKILL_USE = "skill.use"
     const val PING = "ping"
 }
 
@@ -62,7 +74,7 @@ private const val TAG = "DuoEvent"
  * malformed input, and tearing down a live match over one unparseable frame would be worse than
  * missing it.
  */
-fun Json.decodeDuoEvent(raw: String): DuoEvent? {
+fun Json.decodeDuoEvent(raw: String, receivedAtMs: Long = 0L): DuoEvent? {
     val envelope = runCatching { parseToJsonElement(raw).jsonObject }.getOrElse {
         Log.w(TAG, "Dropping unparseable frame: ${raw.take(200)}")
         return null
@@ -78,16 +90,30 @@ fun Json.decodeDuoEvent(raw: String): DuoEvent? {
             "queue.timeout" -> DuoEvent.QueueTimeout
             "room.created" -> DuoEvent.RoomCreated(decodeFromJsonElement(RoomCreatedDto.serializer(), data))
             "match.found" -> DuoEvent.MatchFound(decodeFromJsonElement(MatchFoundDto.serializer(), data))
-            "match.started" -> DuoEvent.MatchStarted(decodeFromJsonElement(MatchStartedDto.serializer(), data))
-            "round.start" -> DuoEvent.RoundStart(decodeFromJsonElement(RoundStartDto.serializer(), data))
-            "round.opponent_answered" -> DuoEvent.OpponentAnswered(decodeFromJsonElement(OpponentAnsweredDto.serializer(), data))
-            "round.result" -> DuoEvent.RoundResult(decodeFromJsonElement(RoundResultDto.serializer(), data))
-            "match.resume" -> DuoEvent.MatchResume(decodeFromJsonElement(MatchResumeDto.serializer(), data))
+            "match.started" -> DuoEvent.MatchStarted(
+                decodeFromJsonElement(MatchStartedDto.serializer(), data),
+                receivedAtMs,
+            )
+            "question.push" -> DuoEvent.QuestionPush(decodeFromJsonElement(QuestionPushDto.serializer(), data))
+            "answer.result" -> DuoEvent.AnswerResult(decodeFromJsonElement(AnswerResultDto.serializer(), data))
+            "opponent.answered" -> DuoEvent.OpponentAnswered(decodeFromJsonElement(OpponentAnsweredDto.serializer(), data))
+            "state.tick" -> DuoEvent.StateTick(
+                decodeFromJsonElement(DuoStateTickDto.serializer(), data),
+                receivedAtMs,
+            )
+            "match.resume" -> DuoEvent.MatchResume(
+                decodeFromJsonElement(MatchResumeDto.serializer(), data),
+                receivedAtMs,
+            )
             "opponent.disconnected" -> DuoEvent.OpponentDisconnected(decodeFromJsonElement(OpponentDisconnectedDto.serializer(), data))
             "opponent.reconnected" -> DuoEvent.OpponentReconnected
             "match.finished" -> DuoEvent.MatchFinished(decodeFromJsonElement(MatchFinishedDto.serializer(), data))
+            "skill.used" -> DuoEvent.SkillUsed(decodeFromJsonElement(DuoSkillUsedDto.serializer(), data))
             "chat.message" -> DuoEvent.Chat(decodeFromJsonElement(ChatMessageDto.serializer(), data))
-            "pong" -> DuoEvent.Pong
+            "pong" -> DuoEvent.Pong(
+                decodeFromJsonElement(DuoPongDto.serializer(), data),
+                receivedAtMs,
+            )
             "error" -> DuoEvent.Failed(decodeFromJsonElement(ErrorDto.serializer(), data))
             else -> {
                 Log.w(TAG, "Ignoring unknown event type '$type'")

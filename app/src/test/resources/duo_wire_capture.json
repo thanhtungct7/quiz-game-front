@@ -1,318 +1,450 @@
 {
-  "ws": [
-    {
-      "type": "connected",
-      "data": {
-        "user": {
-          "id": "a881026d-21ef-4e4e-aac6-20e4707fdbec",
-          "username": "A",
-          "avatar_url": null,
-          "rating": 1000
-        },
-        "active_match_id": null
-      }
+ "ws": [
+  {
+   "type": "connected",
+   "data": {
+    "user": {
+     "id": "6b1f9d1c-2f5a-4a7e-9b0e-1d0c6f2a3b41",
+     "username": "smoke-one",
+     "avatar_url": null,
+     "rating": 1000,
+     "tier": "SILVER",
+     "level": 5,
+     "class_code": "WARRIOR",
+     "day_streak": 4
     },
-    {
-      "type": "room.created",
-      "data": {
-        "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
-        "room_code": "MJE8ZC",
-        "settings": {
-          "question_count": 3,
-          "time_per_question": 6,
-          "topic_ids": null,
-          "difficulty": null
-        }
-      }
-    },
-    {
-      "type": "match.found",
-      "data": {
-        "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
-        "room_code": "MJE8ZC",
-        "mode": "FRIEND",
-        "opponent": {
-          "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
-          "username": "B",
-          "avatar_url": null,
-          "rating": 1000
-        },
-        "settings": {
-          "question_count": 3,
-          "time_per_question": 6,
-          "topic_ids": null,
-          "difficulty": null
-        },
-        "host_id": "a881026d-21ef-4e4e-aac6-20e4707fdbec",
-        "auto_start": false
-      }
-    },
-    {
-      "type": "match.started",
-      "data": {
-        "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
-        "total_rounds": 3
-      }
-    },
-    {
-      "type": "round.start",
-      "data": {
-        "round_index": 0,
-        "total_rounds": 3,
-        "question": {
-          "id": "e6e7411c-68a6-4b7b-802e-7f0823ad2f30",
-          "lesson_id": "0aa300d5-ed2d-4a37-b1cb-073d346c3824",
-          "type": "SELECT",
-          "question": "David doesn't have    _   .",
-          "difficulty": "MEDIUM",
-          "topic_id": "c319172c-299a-4f6a-986e-50be7864eabd",
-          "order_index": 16769,
-          "passage": {
-            "id": "8f566115-fcb4-4a3d-b9df-0785c578098d",
-            "content": "My name is David Green. I am an English boy. My family are in Beijing. My father and mother work there. I have a sister but no brothers. We have a nice house in Beijing. There is a TV, a radios, a telephone, a computer, two small beds, a big bed and a soccer ball in it. The computer is next to the TV. The telephone is in the big bed. The football is under one of the small beds. I like playing football , but my sister likes watching TV.",
-            "level_grade": "middle"
-          },
-          "options": [
-            {
-              "id": "7a599e65-8055-45c8-8aa0-dbd07828af10",
-              "text": "sisters",
-              "order_index": 1,
-              "image_src": null,
-              "audio_src": null
-            },
-            {
-              "id": "3d34c941-3150-4570-b573-49b4d3aa9afa",
-              "text": "brothers",
-              "order_index": 3,
-              "image_src": null,
-              "audio_src": null
-            },
-            {
-              "id": "37cfe112-e31d-4b5a-aa0c-9c4cfe64d54c",
-              "text": "a sister",
-              "order_index": 2,
-              "image_src": null,
-              "audio_src": null
-            },
-            {
-              "id": "0bd3eefa-08e0-483b-9a18-1a79e4074c7c",
-              "text": "cousin",
-              "order_index": 4,
-              "image_src": null,
-              "audio_src": null
-            }
-          ]
-        },
-        "time_limit_seconds": 6,
-        "deadline_at": "2026-08-27T09:05:52.293032Z"
-      }
-    },
-    {
-      "type": "round.opponent_answered",
-      "data": {
-        "round_index": 0
-      }
-    },
-    {
-      "type": "round.result",
-      "data": {
-        "round_index": 0,
-        "correct_option_ids": [
-          "3d34c941-3150-4570-b573-49b4d3aa9afa"
-        ],
-        "explanation": null,
-        "you": {
-          "option_id": "7a599e65-8055-45c8-8aa0-dbd07828af10",
-          "correct": false,
-          "elapsed_ms": 0,
-          "points": 0
-        },
-        "opponent": {
-          "option_id": "0bd3eefa-08e0-483b-9a18-1a79e4074c7c",
-          "correct": false,
-          "elapsed_ms": 0,
-          "points": 0
-        },
-        "your_score": 0,
-        "opponent_score": 0
-      }
-    },
-    {
-      "type": "match.finished",
-      "data": {
-        "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
-        "result": "DRAW",
-        "end_reason": "COMPLETED",
-        "your_score": 1000,
-        "opponent_score": 1000,
-        "your_correct": 1,
-        "opponent_correct": 1,
-        "total_rounds": 3,
-        "duration_seconds": 13,
-        "rating": {
-          "before": 1000,
-          "after": 1000,
-          "delta": 0
-        }
-      }
-    },
-    {
-      "type": "error",
-      "data": {
-        "code": "NOT_IN_MATCH",
-        "message": "You are not in a match"
-      }
-    },
-    {
-      "type": "pong",
-      "data": {}
+    "active_match_id": null,
+    "server_time_ms": 1204310
+   }
+  },
+  {
+   "type": "queue.waiting",
+   "data": {
+    "position": 1,
+    "waited_seconds": 0
+   }
+  },
+  {
+   "type": "room.created",
+   "data": {
+    "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+    "room_code": "ABC234",
+    "settings": {
+     "question_count": 3,
+     "time_per_question": 15,
+     "topic_ids": null,
+     "difficulty": null
     }
-  ],
-  "rest": {
-    "MATCHES": [
+   }
+  },
+  {
+   "type": "match.found",
+   "data": {
+    "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+    "room_code": "ABC234",
+    "mode": "FRIEND",
+    "opponent": {
+     "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+     "username": "smoke-two",
+     "avatar_url": null,
+     "rating": 1050,
+     "tier": "SILVER",
+     "level": 6,
+     "class_code": "WARRIOR",
+     "day_streak": 4
+    },
+    "settings": {
+     "question_count": 3,
+     "time_per_question": 15,
+     "topic_ids": null,
+     "difficulty": null
+    },
+    "host_id": "6b1f9d1c-2f5a-4a7e-9b0e-1d0c6f2a3b41",
+    "auto_start": false
+   }
+  },
+  {
+   "type": "match.started",
+   "data": {
+    "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+    "deck_size": 3,
+    "speed_reference_seconds": 15,
+    "tick_hz": 15,
+    "snapshot_hz": 10,
+    "server_time_ms": 1207500,
+    "deadline_at": 1275000,
+    "your_hp": 115,
+    "your_max_hp": 115,
+    "your_mana": 10,
+    "opponent_hp": 100,
+    "opponent_max_hp": 100
+   }
+  },
+  {
+   "type": "question.push",
+   "data": {
+    "token": "0f3a9c1d8b4e4d1fa2c7e5b90d61a473",
+    "question": {
+     "id": "e6e7411c-68a6-4b7b-802e-7f0823ad2f30",
+     "lesson_id": "8d0a5f61-3b1c-4a3e-9f6d-2c7b4e1a9d05",
+     "type": "SELECT",
+     "question": "David doesn't have    _   .",
+     "difficulty": "EASY",
+     "topic_id": null,
+     "order_index": 1,
+     "passage": null,
+     "options": [
       {
-        "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
-        "mode": "FRIEND",
-        "status": "FINISHED",
-        "end_reason": "COMPLETED",
-        "outcome": "DRAW",
-        "opponent": {
-          "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
-          "username": "B",
-          "avatar_url": null,
-          "rating": 1000
-        },
-        "my_score": 1000,
-        "opponent_score": 1000,
-        "my_correct": 1,
-        "opponent_correct": 1,
-        "question_count": 3,
-        "duration_seconds": 13,
-        "finished_at": "2026-08-27T09:05:59.854146Z",
-        "created_at": "2026-08-27T09:05:46.269145Z"
-      }
-    ],
-    "MATCH_DETAIL": {
-      "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
-      "mode": "FRIEND",
-      "status": "FINISHED",
-      "end_reason": "COMPLETED",
-      "outcome": "DRAW",
-      "opponent": {
-        "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
-        "username": "B",
-        "avatar_url": null,
-        "rating": 1000
+       "id": "7a599e65-8055-45c8-8aa0-dbd07828af10",
+       "text": "any money",
+       "order_index": 1,
+       "image_src": null,
+       "audio_src": null
       },
-      "my_score": 1000,
-      "opponent_score": 1000,
-      "my_correct": 1,
-      "opponent_correct": 1,
-      "question_count": 3,
-      "duration_seconds": 13,
-      "finished_at": "2026-08-27T09:05:59.854146Z",
-      "created_at": "2026-08-27T09:05:46.269145Z",
-      "rounds": [
-        {
-          "round_index": 0,
-          "challenge_id": "e6e7411c-68a6-4b7b-802e-7f0823ad2f30",
-          "question": "David doesn't have    _   .",
-          "my_option_id": "7a599e65-8055-45c8-8aa0-dbd07828af10",
-          "opponent_option_id": "0bd3eefa-08e0-483b-9a18-1a79e4074c7c",
-          "my_correct": false,
-          "opponent_correct": false,
-          "my_elapsed_ms": 0,
-          "opponent_elapsed_ms": 0,
-          "my_points": 0,
-          "opponent_points": 0
-        },
-        {
-          "round_index": 1,
-          "challenge_id": "f33c0164-5e46-4fbe-b938-2e9108c3c4fd",
-          "question": "When Li Denghai began the study of corn,  _  .",
-          "my_option_id": "8976ff15-f072-442b-a8f4-863108993668",
-          "opponent_option_id": "7715323b-bbaf-4338-8f71-d4a00d7bea42",
-          "my_correct": true,
-          "opponent_correct": false,
-          "my_elapsed_ms": 1,
-          "opponent_elapsed_ms": 1,
-          "my_points": 1000,
-          "opponent_points": 0
-        },
-        {
-          "round_index": 2,
-          "challenge_id": "feadd010-9d02-4bb9-af06-6ee354a73b86",
-          "question": "The proverb: \"Do not count your chicken before they are hatched.\" means   _  .",
-          "my_option_id": "e1ca5efe-c6f0-4dfd-89df-906a681ad8c9",
-          "opponent_option_id": "09701d15-cbb8-4ea4-9fe4-86abb97354c9",
-          "my_correct": false,
-          "opponent_correct": true,
-          "my_elapsed_ms": 0,
-          "opponent_elapsed_ms": 0,
-          "my_points": 0,
-          "opponent_points": 1000
-        }
-      ]
+      {
+       "id": "0bd3eefa-08e0-483b-9a18-1a79e4074c7c",
+       "text": "some money",
+       "order_index": 2,
+       "image_src": null,
+       "audio_src": null
+      }
+     ]
     },
-    "STATS": {
-      "rating": 1000,
-      "matches_played": 1,
-      "wins": 0,
-      "losses": 0,
-      "draws": 1,
-      "win_rate": 0.0,
-      "current_streak": 0,
-      "best_streak": 0
+    "pushed_at": 1207540,
+    "deck_remaining": 3,
+    "retry": false
+   }
+  },
+  {
+   "type": "state.tick",
+   "data": {
+    "t": 1209040,
+    "your_hp": 115,
+    "your_max_hp": 115,
+    "your_mana": 28,
+    "your_combo": 1,
+    "your_score": 940,
+    "your_deck_remaining": 2,
+    "opponent_hp": 82,
+    "opponent_max_hp": 100,
+    "opponent_combo": 0,
+    "opponent_score": 0,
+    "opponent_deck_remaining": 3,
+    "deadline_at": 1275000,
+    "lockout_ends_at": 1209140,
+    "stunned_until": 0,
+    "effects": [
+     {
+      "code": "SHIELD",
+      "effect": "DAMAGE_REDUCTION",
+      "magnitude": 500,
+      "expires_at": 1213040
+     }
+    ]
+   }
+  },
+  {
+   "type": "answer.result",
+   "data": {
+    "token": "0f3a9c1d8b4e4d1fa2c7e5b90d61a473",
+    "correct": true,
+    "option_id": "7a599e65-8055-45c8-8aa0-dbd07828af10",
+    "elapsed_ms": 1240,
+    "correct_option_ids": [
+     "7a599e65-8055-45c8-8aa0-dbd07828af10"
+    ],
+    "explanation": "'Any' đi với câu phủ định.",
+    "points": 940,
+    "blow": {
+     "damage": 18,
+     "strike": "QUICK",
+     "combo_count": 1,
+     "combo_multiplier": 1.0,
+     "is_critical": false,
+     "stuns_opponent": false,
+     "element_multiplier": 1.0
     },
-    "LEADERBOARD": {
-      "entries": [
-        {
-          "rank": 1,
-          "user_id": "8f2c3e8d-3bdc-4500-bc77-8181003719d3",
-          "username": "smoke-two",
-          "avatar_url": null,
-          "rating": 1031,
-          "matches_played": 4,
-          "wins": 3
-        },
-        {
-          "rank": 2,
-          "user_id": "fdb4bd78-b87b-4d04-bb66-e384213e73bd",
-          "username": "smoke-two",
-          "avatar_url": null,
-          "rating": 1031,
-          "matches_played": 4,
-          "wins": 3
-        },
-        {
-          "rank": 3,
-          "user_id": "548932fc-64a1-44a5-b6ee-2a5fbeda9791",
-          "username": "smoke-two",
-          "avatar_url": null,
-          "rating": 1017,
-          "matches_played": 3,
-          "wins": 2
-        },
-        {
-          "rank": 4,
-          "user_id": "4a3b258e-b1fe-470d-9cfc-cb40c22b1116",
-          "username": "rc-two",
-          "avatar_url": null,
-          "rating": 1016,
-          "matches_played": 1,
-          "wins": 1
-        },
-        {
-          "rank": 5,
-          "user_id": "b38e7bb1-12fe-473c-8f43-1898537c5e70",
-          "username": "smoke-two",
-          "avatar_url": null,
-          "rating": 1001,
-          "matches_played": 2,
-          "wins": 1
-        }
-      ],
-      "my_rank": 6
+    "your_score": 940,
+    "your_mana": 28,
+    "your_combo": 1,
+    "your_deck_remaining": 2,
+    "opponent_hp": 82,
+    "lockout_ends_at": 1209140
+   }
+  },
+  {
+   "type": "opponent.answered",
+   "data": {
+    "correct": true,
+    "damage": 16,
+    "is_critical": false,
+    "your_hp": 99,
+    "opponent_score": 880,
+    "opponent_combo": 1,
+    "opponent_deck_remaining": 2,
+    "your_stunned_until": 0
+   }
+  },
+  {
+   "type": "skill.used",
+   "data": {
+    "user_id": "6b1f9d1c-2f5a-4a7e-9b0e-1d0c6f2a3b41",
+    "skill_code": "SHIELD",
+    "skill_name": "Khiên chắn",
+    "effect": "DAMAGE_REDUCTION",
+    "magnitude": 500,
+    "mana_spent": 30,
+    "your_hp": 99,
+    "opponent_hp": 82,
+    "your_mana": 0,
+    "ready_again_at": 1213040,
+    "lockout_ends_at": 1209140,
+    "private": {
+     "removed_option_ids": []
     }
+   }
+  },
+  {
+   "type": "match.resume",
+   "data": {
+    "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+    "opponent": {
+     "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+     "username": "smoke-two",
+     "avatar_url": null,
+     "rating": 1050,
+     "tier": "SILVER",
+     "level": 6,
+     "class_code": "WARRIOR",
+     "day_streak": 4
+    },
+    "settings": {
+     "question_count": 3,
+     "time_per_question": 15,
+     "topic_ids": null,
+     "difficulty": null
+    },
+    "deck_size": 3,
+    "server_time_ms": 1212000,
+    "deadline_at": 1275000,
+    "token": "6c2b7e10a94f4b6c8f1d3a5e7b904c2d",
+    "question": {
+     "id": "e6e7411c-68a6-4b7b-802e-7f0823ad2f30",
+     "lesson_id": "8d0a5f61-3b1c-4a3e-9f6d-2c7b4e1a9d05",
+     "type": "SELECT",
+     "question": "David doesn't have    _   .",
+     "difficulty": "EASY",
+     "topic_id": null,
+     "order_index": 1,
+     "passage": null,
+     "options": [
+      {
+       "id": "7a599e65-8055-45c8-8aa0-dbd07828af10",
+       "text": "any money",
+       "order_index": 1,
+       "image_src": null,
+       "audio_src": null
+      },
+      {
+       "id": "0bd3eefa-08e0-483b-9a18-1a79e4074c7c",
+       "text": "some money",
+       "order_index": 2,
+       "image_src": null,
+       "audio_src": null
+      }
+     ]
+    },
+    "pushed_at": 1211800,
+    "your_deck_remaining": 2,
+    "opponent_deck_remaining": 2,
+    "your_score": 940,
+    "opponent_score": 880,
+    "your_hp": 99,
+    "your_max_hp": 115,
+    "opponent_hp": 82,
+    "opponent_max_hp": 100,
+    "your_mana": 0,
+    "your_combo": 1,
+    "opponent_combo": 1,
+    "lockout_ends_at": 0,
+    "stunned_until": 0,
+    "effects": []
+   }
+  },
+  {
+   "type": "opponent.disconnected",
+   "data": {
+    "grace_seconds": 30
+   }
+  },
+  {
+   "type": "chat.message",
+   "data": {
+    "user_id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+    "message": "gl hf",
+    "sent_at": "2026-09-04T09:05:52Z"
+   }
+  },
+  {
+   "type": "match.finished",
+   "data": {
+    "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+    "result": "WIN",
+    "end_reason": "DECK_CLEARED",
+    "your_score": 2760,
+    "opponent_score": 1720,
+    "your_correct": 3,
+    "opponent_correct": 2,
+    "deck_size": 3,
+    "your_deck_cleared": true,
+    "opponent_deck_cleared": false,
+    "duration_seconds": 41,
+    "rating": {
+     "before": 1000,
+     "after": 1016,
+     "delta": 16
+    },
+    "exp": {
+     "before": 120,
+     "after": 160,
+     "delta": 40,
+     "level_before": 5,
+     "level_after": 5,
+     "leveled_up": false
+    },
+    "gold": {
+     "before": 300,
+     "after": 320,
+     "delta": 20
+    },
+    "your_hp_left": 99,
+    "opponent_hp_left": 46,
+    "loot": null,
+    "season": null,
+    "streak": null,
+    "energy_left": 4
+   }
+  },
+  {
+   "type": "error",
+   "data": {
+    "code": "QUESTION_CLOSED",
+    "message": "That question is no longer open"
+   }
+  },
+  {
+   "type": "pong",
+   "data": {
+    "client_time_ms": 884120,
+    "server_time_ms": 1212004
+   }
   }
+ ],
+ "rest": {
+  "MATCHES": [
+   {
+    "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+    "mode": "FRIEND",
+    "status": "FINISHED",
+    "end_reason": "DECK_CLEARED",
+    "outcome": "WIN",
+    "opponent": {
+     "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+     "username": "smoke-two",
+     "avatar_url": null,
+     "rating": 1050,
+     "tier": "SILVER",
+     "level": 6,
+     "class_code": "WARRIOR",
+     "day_streak": 4
+    },
+    "my_score": 2760,
+    "opponent_score": 1720,
+    "my_correct": 3,
+    "opponent_correct": 2,
+    "question_count": 3,
+    "duration_seconds": 41,
+    "finished_at": "2026-09-04T09:06:27Z",
+    "created_at": "2026-09-04T09:05:46Z"
+   }
+  ],
+  "MATCH_DETAIL": {
+   "match_id": "6ac4779a-960f-4c55-8155-70d01b312d27",
+   "mode": "FRIEND",
+   "status": "FINISHED",
+   "end_reason": "DECK_CLEARED",
+   "outcome": "WIN",
+   "opponent": {
+    "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+    "username": "smoke-two",
+    "avatar_url": null,
+    "rating": 1050,
+    "tier": "SILVER",
+    "level": 6,
+    "class_code": "WARRIOR",
+    "day_streak": 4
+   },
+   "my_score": 2760,
+   "opponent_score": 1720,
+   "my_correct": 3,
+   "opponent_correct": 2,
+   "question_count": 3,
+   "duration_seconds": 41,
+   "finished_at": "2026-09-04T09:06:27Z",
+   "created_at": "2026-09-04T09:05:46Z",
+   "my_hp_left": 99,
+   "opponent_hp_left": 46,
+   "skill_uses": [
+    {
+     "round_index": 1,
+     "skill_code": "SHIELD",
+     "mana_spent": 30,
+     "mine": true
+    },
+    {
+     "round_index": 2,
+     "skill_code": "DRAIN",
+     "mana_spent": 20,
+     "mine": false
+    }
+   ]
+  },
+  "STATS": {
+   "rating": 1016,
+   "matches_played": 4,
+   "wins": 3,
+   "losses": 1,
+   "draws": 0,
+   "win_rate": 75.0,
+   "current_streak": 2,
+   "best_streak": 3
+  },
+  "LEADERBOARD": {
+   "entries": [
+    {
+     "rank": 1,
+     "user_id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+     "username": "smoke-two",
+     "avatar_url": null,
+     "rating": 1050,
+     "matches_played": 6,
+     "wins": 4,
+     "tier": "GOLD"
+    },
+    {
+     "rank": 2,
+     "user_id": "6b1f9d1c-2f5a-4a7e-9b0e-1d0c6f2a3b41",
+     "username": "smoke-one",
+     "avatar_url": null,
+     "rating": 1016,
+     "matches_played": 4,
+     "wins": 3,
+     "tier": "SILVER"
+    }
+   ],
+   "my_rank": 2,
+   "scope": "current",
+   "season_code": "2026-S3"
+  }
+ }
 }

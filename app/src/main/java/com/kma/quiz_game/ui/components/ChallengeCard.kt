@@ -16,16 +16,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.kma.quiz_game.ui.theme.Green500
+import com.kma.quiz_game.ui.theme.Neutral050
 import com.kma.quiz_game.ui.theme.Neutral200
+import com.kma.quiz_game.ui.theme.Neutral300
 import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.ShapeXl
 import com.kma.quiz_game.ui.theme.Sky500
 
-enum class ChallengeOptionState { NONE, SELECTED, CORRECT, WRONG }
+/**
+ * [REMOVED] is an option a skill has taken off the table for this player only.
+ *
+ * It is a state rather than a filter: dropping the card out of the list would reflow the grid
+ * mid-round, under a thumb already moving towards an answer.
+ */
+enum class ChallengeOptionState { NONE, SELECTED, CORRECT, WRONG, REMOVED }
 
 private data class OptionColors(val border: Color, val background: Color, val content: Color)
 
@@ -34,6 +43,7 @@ private fun colorsFor(state: ChallengeOptionState): OptionColors = when (state) 
     ChallengeOptionState.SELECTED -> OptionColors(Sky500, Sky500.copy(alpha = 0.1f), Sky500)
     ChallengeOptionState.CORRECT -> OptionColors(Green500, Green500.copy(alpha = 0.1f), Green500)
     ChallengeOptionState.WRONG -> OptionColors(Rose500, Rose500.copy(alpha = 0.1f), Rose500)
+    ChallengeOptionState.REMOVED -> OptionColors(Neutral200, Neutral050, Neutral300)
 }
 
 /** A single answer option, used both for SELECT (grid) and ASSIST (single column) challenges. */
@@ -66,6 +76,7 @@ fun ChallengeOptionCard(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             color = colors.content,
+            textDecoration = if (state == ChallengeOptionState.REMOVED) TextDecoration.LineThrough else null,
         )
     }
 }
