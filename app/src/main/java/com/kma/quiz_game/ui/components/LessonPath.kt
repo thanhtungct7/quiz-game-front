@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.kma.quiz_game.ui.components.battle.monsterArt
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Green600
 import com.kma.quiz_game.ui.theme.Neutral200
@@ -34,10 +36,21 @@ import com.kma.quiz_game.ui.theme.ShapeFull
 
 enum class LessonNodeStatus { LOCKED, ACTIVE, COMPLETE }
 
+/**
+ * One gate on the path.
+ *
+ * [monsterArtCode] comes from `GET /battles/courses/{id}/monsters` -- one request for the whole
+ * map -- and is null until it arrives, or when the catalog has no monster for this gate. The node
+ * still draws in that case: a missing monster must never cost the player their way into a lesson.
+ */
 data class LessonPathItem(
     val id: String,
     val title: String,
     val status: LessonNodeStatus,
+    val monsterArtCode: String? = null,
+    val isBoss: Boolean = false,
+    /** True once this gate's monster has been beaten at least once. */
+    val cleared: Boolean = false,
 )
 
 /** Zig-zag lesson path: a cycle of 8 horizontal offsets, alternating left/right. */
@@ -60,6 +73,9 @@ fun LessonPath(
                 LessonNode(
                     status = item.status,
                     onClick = { onLessonClick(item.id) },
+                    monsterArtCode = item.monsterArtCode,
+                    isBoss = item.isBoss,
+                    cleared = item.cleared,
                 )
             }
         }
@@ -71,8 +87,11 @@ fun LessonNode(
     status: LessonNodeStatus,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    monsterArtCode: String? = null,
+    isBoss: Boolean = false,
+    cleared: Boolean = false,
 ) {
-    val size = 64.dp
+    val size = if (isBoss) 76.dp else 64.dp
     val interactionSource = remember { MutableInteractionSource() }
     Box(contentAlignment = Alignment.TopCenter, modifier = modifier) {
         if (status == LessonNodeStatus.ACTIVE) {
@@ -97,11 +116,38 @@ fun LessonNode(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            when (status) {
-                LessonNodeStatus.COMPLETE -> Icon(Icons.Filled.Check, contentDescription = "completed", tint = Color.White, modifier = Modifier.size(28.dp))
-                LessonNodeStatus.LOCKED -> Icon(Icons.Filled.Lock, contentDescription = "locked", tint = Neutral400, modifier = Modifier.size(24.dp))
-                LessonNodeStatus.ACTIVE -> Icon(Icons.Filled.Star, contentDescription = "start", tint = Color.White, modifier = Modifier.size(28.dp))
+            when {
+                // A locked gate keeps its padlock: showing which monster waits behind a gate the
+                // player cannot open yet would only be a tease.
+                status == LessonNodeStatus.LOCKED ->
+                    Icon(Icons.Filled.Lock, contentDescription = "locked", tint = Neutral400, modifier = Modifier.size(24.dp))
+
+                monsterArtCode != null -> Text(
+                    text = monsterArt(monsterArtCode),
+                    fontSize = if (isBoss) 34.sp else 28.sp,
+                )
+
+                status == LessonNodeStatus.COMPLETE ->
+                    Icon(Icons.Filled.Check, contentDescription = "completed", tint = Color.White, modifier = Modifier.size(28.dp))
+
+                else ->
+                    Icon(Icons.Filled.Star, contentDescription = "start", tint = Color.White, modifier = Modifier.size(28.dp))
             }
+        }
+
+        // A gate whose monster is down keeps its tick, over the monster rather than instead of it.
+        if (cleared && status != LessonNodeStatus.LOCKED) {
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = "đã hạ",
+                tint = Color.White,
+                modifier = Modifier
+                    .offset(x = 22.dp, y = 26.dp)
+                    .size(20.dp)
+                    .clip(ShapeFull)
+                    .background(Green600)
+                    .padding(2.dp),
+            )
         }
     }
 }
@@ -131,10 +177,10 @@ private fun LessonPathPreview() {
     Quiz_gameTheme {
         LessonPath(
             lessons = listOf(
-                LessonPathItem("1", "Lesson 1", LessonNodeStatus.COMPLETE),
-                LessonPathItem("2", "Lesson 2", LessonNodeStatus.ACTIVE),
-                LessonPathItem("3", "Lesson 3", LessonNodeStatus.LOCKED),
-                LessonPathItem("4", "Lesson 4", LessonNodeStatus.LOCKED),
+                LessonPathItem("1", "Lesson 1", LessonNodeStatus.COMPLETE, "SLIME", cleared = true),
+                LessonPathItem("2", "Lesson 2", LessonNodeStatus.ACTIVE, "GOBLIN"),
+                LessonPathItem("3", "Lesson 3", LessonNodeStatus.LOCKED, "DIRE_WOLF"),
+                LessonPathItem("4", "Lesson 4", LessonNodeStatus.LOCKED, "DRAGON", isBoss = true),
             ),
             onLessonClick = {},
         )

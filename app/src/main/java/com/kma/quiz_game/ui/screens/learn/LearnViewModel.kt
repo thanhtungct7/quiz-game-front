@@ -3,10 +3,12 @@ package com.kma.quiz_game.ui.screens.learn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.quiz_game.data.GameConstants
+import com.kma.quiz_game.data.remote.dto.CourseMonsterDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressStatusDto
 import com.kma.quiz_game.data.remote.toUserMessage
 import com.kma.quiz_game.data.repository.AuthRepository
+import com.kma.quiz_game.data.repository.BattleRepository
 import com.kma.quiz_game.data.repository.CourseTree
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.UserProgressRepository
@@ -28,6 +30,7 @@ class LearnViewModel(
     private val learnRepository: LearnRepository,
     private val userProgressRepository: UserProgressRepository,
     private val authRepository: AuthRepository,
+    private val battleRepository: BattleRepository,
 ) : ViewModel() {
 
     /** Cache-first: whatever was stored on the last run is on screen before any request goes out. */
@@ -35,6 +38,10 @@ class LearnViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val progressByLesson = MutableStateFlow<Map<String, LessonProgressDto>>(emptyMap())
+
+    /** Which monster guards each gate, and which gates are already down. One request for the whole
+     * course; an empty map simply draws the old path, so a PvE outage never hides the lessons. */
+    private val monstersByLesson = MutableStateFlow<Map<String, CourseMonsterDto>>(emptyMap())
     private val isSyncing = MutableStateFlow(true)
     private val errorMessage = MutableStateFlow<String?>(null)
 
@@ -42,17 +49,22 @@ class LearnViewModel(
         .filterNotNull()
         .flatMapLatest { userProgressRepository.observe(it) }
 
+    /** The three flows the path itself is built from, folded first: `combine` only has a typed
+     * overload up to five, and the path deserves the readable half of the budget. */
+    private val path = combine(tree, progressByLesson, monstersByLesson) { courseTree, progress, monsters ->
+        courseTree?.let { toUnitUi(it, progress, monsters) }.orEmpty() to (courseTree != null)
+    }
+
     val uiState: StateFlow<LearnUiState> = combine(
-        tree,
-        progressByLesson,
+        path,
         userProgress,
         isSyncing,
         errorMessage,
-    ) { courseTree, progress, gamification, syncing, error ->
+    ) { (units, hasTree), gamification, syncing, error ->
         LearnUiState(
-            isLoading = courseTree == null && syncing,
+            isLoading = !hasTree && syncing,
             isSyncing = syncing,
-            units = courseTree?.let { toUnitUi(it, progress) }.orEmpty(),
+            units = units,
             hearts = gamification?.hearts ?: GameConstants.MAX_HEARTS,
             points = gamification?.points ?: 0,
             isPro = gamification?.isPro ?: false,
@@ -82,6 +94,11 @@ class LearnViewModel(
             val courseId = result.getOrNull() ?: tree.value?.courseId
             if (courseId != null) {
                 progressByLesson.value = learnRepository.loadProgress(courseId)
+                // Best effort: the path is drawable without it, so a failure here is not an error
+                // the learner has to see.
+                battleRepository.courseMonsters(courseId).onSuccess { map ->
+                    monstersByLesson.value = map.lessons.associateBy { it.lessonId }
+                }
             }
             isSyncing.value = false
         }
@@ -92,7 +109,11 @@ class LearnViewModel(
  * The first lesson that is not COMPLETED -- across the whole course, not per unit -- is ACTIVE;
  * everything after it is LOCKED, everything before it keeps its real status.
  */
-private fun toUnitUi(tree: CourseTree, progress: Map<String, LessonProgressDto>): List<UnitUi> {
+private fun toUnitUi(
+    tree: CourseTree,
+    progress: Map<String, LessonProgressDto>,
+    monsters: Map<String, CourseMonsterDto>,
+): List<UnitUi> {
     val flatLessonIds = tree.units.flatMap { unit -> unit.lessons.map { it.id } }
     val firstIncompleteIndex = flatLessonIds.indexOfFirst {
         progress[it]?.status != LessonProgressStatusDto.COMPLETED
@@ -108,7 +129,15 @@ private fun toUnitUi(tree: CourseTree, progress: Map<String, LessonProgressDto>)
                 else -> LessonNodeStatus.LOCKED
             }
             index++
-            LessonPathItem(lesson.id, lesson.title, status)
+            val monster = monsters[lesson.id]
+            LessonPathItem(
+                id = lesson.id,
+                title = lesson.title,
+                status = status,
+                monsterArtCode = monster?.artCode,
+                isBoss = monster?.isBoss == true,
+                cleared = monster?.cleared == true,
+            )
         }
         UnitUi(unit.id, unit.title, unit.description, lessonItems)
     }

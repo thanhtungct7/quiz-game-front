@@ -38,8 +38,23 @@ sealed interface Destination {
     @Serializable
     data class DuoMatchDetail(val matchId: String) : Destination
 
+    /** Equipment lives behind the Shop tab: chests are where items come from, not a store. */
     @Serializable
     data object Shop : Destination
+
+    /** The class picker. Full screen -- it is a comparison, and the bottom bar steals a row. */
+    @Serializable
+    data object GameClass : Destination
+
+    @Serializable
+    data object GameSkills : Destination
+
+    /**
+     * The equipped bar. Reachable from the skill tree, the lobby, *and* from an empty skill dock
+     * mid-match, which is the moment a player discovers they need it.
+     */
+    @Serializable
+    data object GameLoadout : Destination
 
     @Serializable
     data object Profile : Destination
@@ -50,6 +65,16 @@ sealed interface Destination {
 
     @Serializable
     data class Lesson(val lessonId: String) : Destination
+
+    /**
+     * The lesson fought instead of studied. Full screen -- the bottom bar would sit on the
+     * health bars.
+     */
+    @Serializable
+    data class Battle(val lessonId: String) : Destination
+
+    @Serializable
+    data class BattleResult(val lessonId: String) : Destination
 
     @Serializable
     data object Login : Destination
@@ -78,6 +103,6 @@ val BOTTOM_NAV_ITEMS = listOf(
     BottomNavItem(Destination.Learn, "Learn", Icons.Filled.School, Icons.Outlined.School),
     BottomNavItem(Destination.Duo, "Duo", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports),
     BottomNavItem(Destination.Leaderboard, "Ranking", Icons.Filled.Leaderboard, Icons.Outlined.Leaderboard),
-    BottomNavItem(Destination.Shop, "Shop", Icons.Filled.Storefront, Icons.Outlined.Storefront),
+    BottomNavItem(Destination.Shop, "Trang bị", Icons.Filled.Storefront, Icons.Outlined.Storefront),
     BottomNavItem(Destination.Profile, "Hồ sơ", Icons.Filled.Person, Icons.Outlined.Person),
 )

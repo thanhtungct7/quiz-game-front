@@ -5,6 +5,38 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// --- libGDX native libraries -------------------------------------------------
+//
+// The `gdx-platform` natives artifacts are plain jars holding a bare `libgdx.so`, with the ABI
+// carried only by the classifier, so AGP cannot package them as they come. They are pulled
+// through a configuration of their own and laid out as `<abi>/libgdx.so`, which is then
+// registered as a jniLibs source directory below.
+val gdxAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+
+val gdxNatives: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+// Resolved to a plain File: AGP 9 refuses a Provider in the SourceSet API, because it
+// cannot tell a generated directory from a hand-edited one. The path is static anyway;
+// `preBuild` below is what guarantees the directory is filled before anything reads it.
+val gdxNativesDir: Directory = layout.buildDirectory.dir("gdxJniLibs").get()
+
+val copyGdxNatives by tasks.registering(Sync::class) {
+    into(gdxNativesDir)
+    gdxAbis.forEach { abi ->
+        from(provider {
+            gdxNatives.files
+                .filter { it.name.endsWith("natives-$abi.jar") }
+                .map { zipTree(it) }
+        }) {
+            include("*.so")
+            into(abi)
+        }
+    }
+}
+
 android {
     namespace = "com.kma.quiz_game"
     compileSdk {
@@ -53,6 +85,7 @@ android {
         compose = true
         buildConfig = true
     }
+    sourceSets.getByName("main").jniLibs.srcDir(gdxNativesDir.asFile)
 }
 
 dependencies {
@@ -79,6 +112,12 @@ dependencies {
     implementation(libs.google.play.services.auth)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.gdx.core)
+    implementation(libs.gdx.backend.android)
+    gdxAbis.forEach { abi ->
+        gdxNatives(variantOf(libs.gdx.platform) { classifier("natives-$abi") })
+    }
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -87,3 +126,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+tasks.named("preBuild") { dependsOn(copyGdxNatives) }

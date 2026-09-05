@@ -2,7 +2,6 @@ package com.kma.quiz_game
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,13 +10,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.FragmentActivity
+import com.badlogic.gdx.backends.android.AndroidFragmentApplication
 import com.kma.quiz_game.ui.navigation.RootNavHost
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
 
 private const val RESET_PASSWORD_SCHEME = "quizgame"
 private const val RESET_PASSWORD_HOST = "reset-password"
 
-class MainActivity : ComponentActivity() {
+/**
+ * A `FragmentActivity` rather than a `ComponentActivity` for one reason: the battle arena runs on
+ * libGDX, whose only supported way to live inside an Activity it does not own is an
+ * `AndroidFragmentApplication`, which is a Fragment and needs a fragment manager to be committed
+ * into. Nothing else in the app uses fragments, and the whole UI is still Compose.
+ *
+ * [AndroidFragmentApplication.Callbacks] is not optional: the backend looks for it on the host
+ * activity when the arena attaches and throws if it is missing.
+ */
+class MainActivity : FragmentActivity(), AndroidFragmentApplication.Callbacks {
     /**
      * Token from a `quizgame://reset-password?token=...` link, held here rather than routed as a
      * navigation deep link: [RootNavHost] swaps between two nav graphs with their own
@@ -50,6 +60,15 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * The arena asking to be shut down -- from a GL initialisation failure, in practice.
+     *
+     * Ignored on purpose. In a libGDX game this ends the process, but here the arena is a backdrop
+     * to a screen that is perfectly playable without it, and killing the app over a graphics
+     * problem would lose the fight the player is in the middle of.
+     */
+    override fun exit() = Unit
 
     /** The activity is `singleTask`, so a link tapped while the app is already open lands here. */
     override fun onNewIntent(intent: Intent) {

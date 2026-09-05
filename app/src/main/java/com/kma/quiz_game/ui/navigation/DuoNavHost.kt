@@ -21,15 +21,20 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.battle.BattleResultScreen
+import com.kma.quiz_game.ui.screens.battle.BattleScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHistoryScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchDetailScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchScreen
 import com.kma.quiz_game.ui.screens.duo.DuoResultScreen
+import com.kma.quiz_game.ui.screens.game.ClassPickerScreen
+import com.kma.quiz_game.ui.screens.game.InventoryScreen
+import com.kma.quiz_game.ui.screens.game.LoadoutScreen
+import com.kma.quiz_game.ui.screens.game.SkillTreeScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
-import com.kma.quiz_game.ui.screens.placeholder.PlaceholderScreen
 import com.kma.quiz_game.ui.screens.profile.EditProfileScreen
 import com.kma.quiz_game.ui.screens.profile.ProfileScreen
 import kotlinx.coroutines.launch
@@ -84,7 +89,9 @@ fun DuoNavHost() {
         ) {
             composable<Destination.Learn> {
                 LearnScreen(
-                    onLessonClick = { lessonId -> navController.navigate(Destination.Lesson(lessonId)) },
+                    // A gate on the path is a monster now. The plain lesson screen stays wired
+                    // below as the way back if the battle route ever has to be switched off.
+                    onLessonClick = { lessonId -> navController.navigate(Destination.Battle(lessonId)) },
                 )
             }
             composable<Destination.Leaderboard> {
@@ -95,12 +102,19 @@ fun DuoNavHost() {
                     // The socket decides when a match exists, so the lobby only signals it here.
                     onMatchStarting = { navController.navigateToMatch() },
                     onOpenHistory = { navController.navigate(Destination.DuoHistory) },
+                    onOpenClasses = { navController.navigate(Destination.GameClass) },
+                    onOpenSkills = { navController.navigate(Destination.GameSkills) },
+                    onOpenLoadout = { navController.navigate(Destination.GameLoadout) },
+                    onOpenInventory = { navController.navigate(Destination.Shop) },
                 )
             }
             composable<Destination.DuoMatch> {
                 DuoMatchScreen(
                     onFinished = { navController.replaceMatchWith(Destination.DuoResult) },
                     onLeft = { navController.replaceMatchWith(Destination.Duo) },
+                    // An empty skill dock is the one place a player learns the bar exists at all,
+                    // so it opens the loadout *over* the match rather than leaving it.
+                    onOpenLoadout = { navController.navigate(Destination.GameLoadout) },
                 )
             }
             composable<Destination.DuoResult> {
@@ -132,13 +146,51 @@ fun DuoNavHost() {
                 EditProfileScreen(onDone = { navController.popBackStack() })
             }
             composable<Destination.Shop> {
-                PlaceholderScreen(title = "Shop", subtitle = "Coming in the next iteration")
+                InventoryScreen()
+            }
+            composable<Destination.GameClass> {
+                ClassPickerScreen(onBack = { navController.popBackStack() })
+            }
+            composable<Destination.GameSkills> {
+                SkillTreeScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenLoadout = { navController.navigate(Destination.GameLoadout) },
+                )
+            }
+            composable<Destination.GameLoadout> {
+                LoadoutScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSkillTree = { navController.navigate(Destination.GameSkills) },
+                )
             }
             composable<Destination.Lesson> { entry ->
                 val lesson = entry.toRoute<Destination.Lesson>()
                 LessonScreen(
                     lessonId = lesson.lessonId,
                     onExit = { navController.popBackStack() },
+                )
+            }
+            composable<Destination.Battle> { entry ->
+                val route = entry.toRoute<Destination.Battle>()
+                BattleScreen(
+                    lessonId = route.lessonId,
+                    onFinished = {
+                        navController.replaceBattleWith(Destination.BattleResult(route.lessonId))
+                    },
+                    onLeft = { navController.popBackStack() },
+                )
+            }
+            composable<Destination.BattleResult> { entry ->
+                val route = entry.toRoute<Destination.BattleResult>()
+                BattleResultScreen(
+                    lessonId = route.lessonId,
+                    onBackToPath = { navController.replaceBattleResultWith(Destination.Learn) },
+                    onFightAgain = { lessonId ->
+                        navController.navigate(Destination.Battle(lessonId)) {
+                            popUpTo(Destination.BattleResult(lessonId)) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
         }
@@ -154,6 +206,21 @@ private fun NavController.navigateToMatch() {
 private fun NavController.replaceMatchWith(destination: Destination) {
     navigate(destination) {
         popUpTo(Destination.DuoMatch) { inclusive = true }
+        launchSingleTop = true
+    }
+}
+
+/** A finished battle must not be reachable with Back. */
+private fun NavController.replaceBattleWith(destination: Destination) {
+    navigate(destination) {
+        popUpTo<Destination.Battle> { inclusive = true }
+        launchSingleTop = true
+    }
+}
+
+private fun NavController.replaceBattleResultWith(destination: Destination) {
+    navigate(destination) {
+        popUpTo<Destination.BattleResult> { inclusive = true }
         launchSingleTop = true
     }
 }
