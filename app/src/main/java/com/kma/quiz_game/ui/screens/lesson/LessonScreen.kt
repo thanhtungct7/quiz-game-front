@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +38,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.R
+import com.kma.quiz_game.data.remote.dto.ChallengeOptionDto
 import com.kma.quiz_game.data.remote.dto.ChallengeTypeDto
 import com.kma.quiz_game.ui.components.ChallengeOptionCard
 import com.kma.quiz_game.ui.components.ChallengeOptionState
@@ -44,6 +47,9 @@ import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.components.ExitDialog
 import com.kma.quiz_game.ui.components.HeartsDialog
 import com.kma.quiz_game.ui.components.QuestionBubble
+import com.kma.quiz_game.ui.components.SentenceBuilder
+import com.kma.quiz_game.ui.components.SentenceStatus
+import com.kma.quiz_game.ui.components.WordTile
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Rose500
 
@@ -97,7 +103,17 @@ fun LessonScreen(lessonId: String, onExit: () -> Unit) {
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
-                if (challenge.type == ChallengeTypeDto.ASSIST) {
+                if (challenge.type == ChallengeTypeDto.ORDER) {
+                    // "Ghép câu": every option is a word of one sentence, so there is nothing to
+                    // pick -- the answer is the order the words are laid down in.
+                    OrderChallenge(
+                        question = challenge.question,
+                        options = challenge.options,
+                        uiState = uiState,
+                        onPlace = viewModel::placeOption,
+                        onRemove = viewModel::removePlacedOption,
+                    )
+                } else if (challenge.type == ChallengeTypeDto.ASSIST) {
                     QuestionBubble(question = challenge.question, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(16.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -141,7 +157,7 @@ fun LessonScreen(lessonId: String, onExit: () -> Unit) {
         }
         LessonFooter(
             status = uiState.answerStatus,
-            canCheck = uiState.selectedOptionId != null && !uiState.isChecking,
+            canCheck = uiState.hasAnswer && !uiState.isChecking,
             isChecking = uiState.isChecking,
             explanation = uiState.explanation,
             onCheck = viewModel::onCheck,
@@ -163,6 +179,39 @@ fun LessonScreen(lessonId: String, onExit: () -> Unit) {
             onRefillWithPoints = viewModel::refillHeartsWithPoints,
             onGoToShop = onExit,
         )
+    }
+}
+
+/**
+ * A word-ordering challenge: the prompt, the sentence being built and the word bank.
+ *
+ * Scrolls on its own because a long sentence makes both the bank and the built sentence tall, and
+ * the footer's Check button has to stay reachable.
+ */
+@Composable
+private fun OrderChallenge(
+    question: String,
+    options: List<ChallengeOptionDto>,
+    uiState: LessonUiState,
+    onPlace: (String) -> Unit,
+    onRemove: (String) -> Unit,
+) {
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        QuestionBubble(question = question, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(16.dp))
+        SentenceBuilder(
+            tiles = options.map { WordTile(id = it.id, text = it.text) },
+            placedIds = uiState.placedOptionIds,
+            status = when (uiState.answerStatus) {
+                AnswerStatus.NONE -> SentenceStatus.OPEN
+                AnswerStatus.CORRECT -> SentenceStatus.CORRECT
+                AnswerStatus.WRONG -> SentenceStatus.WRONG
+            },
+            onPlace = onPlace,
+            onRemove = onRemove,
+        )
+        // The solution itself is not repeated here: the footer already shows it, as the
+        // challenge's explanation, for every challenge type.
     }
 }
 

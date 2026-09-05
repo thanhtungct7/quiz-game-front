@@ -75,7 +75,15 @@ data class ChallengeOptionDto(
     val audioSrc: String? = null,
 )
 
-enum class ChallengeTypeDto { SELECT, ASSIST }
+/**
+ * How an answer is given, which is also how it is graded.
+ *
+ * SELECT and ASSIST are single-choice. ORDER ("ghép câu") is not: every option is one word tile of
+ * a single sentence, all of them belong in the answer, and what is graded is the *sequence* they
+ * are laid down in. The backend serves an ORDER challenge's tiles pre-shuffled -- their
+ * [ChallengeOptionDto.orderIndex] is a display position, not the solution.
+ */
+enum class ChallengeTypeDto { SELECT, ASSIST, ORDER }
 
 /** Learner-facing challenge -- correctness is only ever revealed via ProgressApi.checkAnswer. */
 @Serializable

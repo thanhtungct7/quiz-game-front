@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.quiz_game.data.GameConstants
 import com.kma.quiz_game.data.local.entities.UserProgressEntity
+import com.kma.quiz_game.data.remote.dto.ChallengeTypeDto
 import com.kma.quiz_game.data.remote.toUserMessage
 import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.ChallengeRepository
@@ -57,15 +58,42 @@ class LessonViewModel(
         }
     }
 
+    /** ORDER challenges: append a word tile from the bank to the sentence being built. */
+    fun placeOption(optionId: String) {
+        _uiState.update { state ->
+            if (state.answerStatus != AnswerStatus.NONE) return
+            if (optionId in state.placedOptionIds) return
+            state.copy(placedOptionIds = state.placedOptionIds + optionId)
+        }
+    }
+
+    /**
+     * ORDER challenges: take a word back out of the sentence.
+     *
+     * It returns to the bank rather than being removed outright -- the tiles after it keep their
+     * relative order, so pulling the wrong word out of the middle does not cost the rest.
+     */
+    fun removePlacedOption(optionId: String) {
+        _uiState.update { state ->
+            if (state.answerStatus != AnswerStatus.NONE) return
+            state.copy(placedOptionIds = state.placedOptionIds - optionId)
+        }
+    }
+
     fun onCheck() {
         val state = _uiState.value
         val challenge = state.currentChallenge ?: return
-        val selectedId = state.selectedOptionId ?: return
-        if (state.isChecking) return
+        if (!state.hasAnswer || state.isChecking) return
 
         _uiState.update { it.copy(isChecking = true, errorMessage = null) }
         viewModelScope.launch {
-            val result = runCatching { challengeRepository.checkAnswer(challenge.id, selectedId) }
+            val result = runCatching {
+                if (challenge.type == ChallengeTypeDto.ORDER) {
+                    challengeRepository.checkOrderedAnswer(challenge.id, state.placedOptionIds)
+                } else {
+                    challengeRepository.checkAnswer(challenge.id, state.selectedOptionId!!)
+                }
+            }
             result.onSuccess { checkResult ->
                 if (checkResult.correct) {
                     val current = latestUserProgress
@@ -121,6 +149,7 @@ class LessonViewModel(
                         state.copy(
                             currentIndex = nextIndex,
                             selectedOptionId = null,
+                            placedOptionIds = emptyList(),
                             answerStatus = AnswerStatus.NONE,
                             correctOptionIds = emptyList(),
                             explanation = null,
@@ -130,6 +159,7 @@ class LessonViewModel(
 
                 AnswerStatus.WRONG -> state.copy(
                     selectedOptionId = null,
+                    placedOptionIds = emptyList(),
                     answerStatus = AnswerStatus.NONE,
                     correctOptionIds = emptyList(),
                     explanation = null,
