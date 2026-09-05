@@ -1,6 +1,7 @@
 package com.kma.quiz_game.ui.screens.leaderboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,9 +34,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.remote.dto.DuoLeaderboardEntryDto
+import com.kma.quiz_game.data.remote.dto.LeaderboardScope
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.components.UserAvatar
+import com.kma.quiz_game.ui.components.game.TierBadge
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Neutral050
@@ -61,7 +64,13 @@ fun LeaderboardScreen(
         Text(
             text = "Bảng xếp hạng",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
+        )
+
+        ScopeTabs(
+            scope = state.scope,
+            seasonCode = state.seasonCode,
+            onSelect = viewModel::selectScope,
         )
 
         when {
@@ -84,6 +93,56 @@ fun LeaderboardScreen(
             else -> LeaderboardList(state, viewModel::refresh)
         }
     }
+}
+
+/**
+ * The two boards, named for what they actually are.
+ *
+ * The distinction matters more than a tab usually does: a new season opens every player at 70% of
+ * their previous rating, so a player whose number dropped without losing a match needs to be able
+ * to see that the season board is not the same thing as their rating.
+ */
+@Composable
+private fun ScopeTabs(scope: String, seasonCode: String?, onSelect: (String) -> Unit) {
+    Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScopeChip(
+                label = "Mùa này",
+                selected = scope == LeaderboardScope.CURRENT,
+                onClick = { onSelect(LeaderboardScope.CURRENT) },
+            )
+            ScopeChip(
+                label = "Mọi thời đại",
+                selected = scope == LeaderboardScope.ALL_TIME,
+                onClick = { onSelect(LeaderboardScope.ALL_TIME) },
+            )
+        }
+        Text(
+            text = if (scope == LeaderboardScope.CURRENT) {
+                seasonCode?.let { "Mùa $it · điểm mùa được reset mềm mỗi mùa" }
+                    ?: "Điểm mùa được reset mềm mỗi mùa"
+            } else {
+                "Điểm tích luỹ, không bao giờ bị reset"
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = Neutral500,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun ScopeChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (selected) Color.White else Neutral700,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) Sky500 else Neutral100)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
@@ -169,6 +228,7 @@ private fun Podium(top: List<DuoLeaderboardEntryDto>, myUserId: String?) {
                     color = Sky500,
                     fontWeight = FontWeight.Bold,
                 )
+                TierBadge(tier = entry.tier, compact = true)
                 Spacer(Modifier.height(6.dp))
                 Box(
                     modifier = Modifier
@@ -218,11 +278,15 @@ private fun LeaderboardRow(entry: DuoLeaderboardEntryDto, isMe: Boolean) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = "${entry.matchesPlayed} trận · ${entry.wins} thắng",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Neutral500,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TierBadge(tier = entry.tier, compact = true)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "${entry.matchesPlayed} trận · ${entry.wins} thắng",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Neutral500,
+                    )
+                }
             }
             Text(
                 text = "${entry.rating}",
