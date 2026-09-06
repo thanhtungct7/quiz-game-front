@@ -11,6 +11,7 @@ import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.BattleRepository
 import com.kma.quiz_game.data.repository.CourseTree
 import com.kma.quiz_game.data.repository.LearnRepository
+import com.kma.quiz_game.data.repository.ProfileRepository
 import com.kma.quiz_game.data.repository.UserProgressRepository
 import com.kma.quiz_game.ui.components.LessonNodeStatus
 import com.kma.quiz_game.ui.components.LessonPathItem
@@ -31,6 +32,7 @@ class LearnViewModel(
     private val userProgressRepository: UserProgressRepository,
     private val authRepository: AuthRepository,
     private val battleRepository: BattleRepository,
+    private val profileRepository: ProfileRepository,
 ) : ViewModel() {
 
     /** Cache-first: whatever was stored on the last run is on screen before any request goes out. */
@@ -60,7 +62,10 @@ class LearnViewModel(
         userProgress,
         isSyncing,
         errorMessage,
-    ) { (units, hasTree), gamification, syncing, error ->
+        // The header strip's level and band. Shared with the profile tab through the repository,
+        // so a level gained mid-session shows up here without this screen asking again.
+        profileRepository.selfProfile,
+    ) { (units, hasTree), gamification, syncing, error, card ->
         LearnUiState(
             isLoading = !hasTree && syncing,
             isSyncing = syncing,
@@ -68,6 +73,9 @@ class LearnViewModel(
             hearts = gamification?.hearts ?: GameConstants.MAX_HEARTS,
             points = gamification?.points ?: 0,
             isPro = gamification?.isPro ?: false,
+            level = card?.level,
+            cefr = card?.cefr.orEmpty(),
+            dayStreak = card?.dayStreak ?: 0,
             errorMessage = error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LearnUiState())
@@ -88,6 +96,8 @@ class LearnViewModel(
     fun sync() {
         viewModelScope.launch {
             isSyncing.value = true
+            // Best effort, like the monster map below: the path draws fine without a level chip.
+            profileRepository.refreshSelfProfile()
             val result = learnRepository.refreshTree()
             errorMessage.value = result.exceptionOrNull()?.toUserMessage()
             // Even a failed refresh leaves the cached tree, which still names the course.

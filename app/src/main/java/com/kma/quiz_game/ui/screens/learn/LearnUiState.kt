@@ -19,5 +19,10 @@ data class LearnUiState(
     val hearts: Int = GameConstants.MAX_HEARTS,
     val points: Int = 0,
     val isPro: Boolean = false,
+    /** From the aggregated profile. Null until it arrives, so the header can leave the chip out
+     * rather than draw a placeholder level that visibly changes a moment later. */
+    val level: Int? = null,
+    val cefr: String = "",
+    val dayStreak: Int = 0,
     val errorMessage: String? = null,
 )

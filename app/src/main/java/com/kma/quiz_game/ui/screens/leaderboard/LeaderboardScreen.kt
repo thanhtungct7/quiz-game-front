@@ -24,6 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,11 +38,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.remote.dto.DuoLeaderboardEntryDto
 import com.kma.quiz_game.data.remote.dto.LeaderboardScope
+import com.kma.quiz_game.data.remote.dto.LearningStatsDto
+import com.kma.quiz_game.data.remote.dto.PublicProfileDto
+import com.kma.quiz_game.data.remote.dto.PvpStatsDto
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.components.UserAvatar
 import com.kma.quiz_game.ui.components.game.TierBadge
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
+import com.kma.quiz_game.ui.screens.profile.PublicProfileSheet
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Neutral050
 import com.kma.quiz_game.ui.theme.Neutral100
@@ -59,6 +66,19 @@ fun LeaderboardScreen(
 ) {
     val viewModel: LeaderboardViewModel = viewModel(factory = rememberAppViewModelFactory())
     val state by viewModel.uiState.collectAsState()
+    // Which player's card is open, or null. Held here rather than in the ViewModel: it is screen
+    // state that dies with the screen, and the sheet owns its own loading.
+    var openedPlayer by remember { mutableStateOf<DuoLeaderboardEntryDto?>(null) }
+
+    openedPlayer?.let { entry ->
+        PublicProfileSheet(
+            userId = entry.userId,
+            onDismiss = { openedPlayer = null },
+            // The row already carries the name, avatar, rating and tier, so the sheet opens with
+            // those drawn and fills in the rest when the request lands.
+            seed = entry.asProfileSeed(),
+        )
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         Text(
@@ -90,7 +110,7 @@ fun LeaderboardScreen(
                 onAction = onPlayDuo,
             )
 
-            else -> LeaderboardList(state, viewModel::refresh)
+            else -> LeaderboardList(state, onOpenPlayer = { openedPlayer = it })
         }
     }
 }
@@ -146,7 +166,10 @@ private fun ScopeChip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun LeaderboardList(state: LeaderboardUiState, onRetry: () -> Unit) {
+private fun LeaderboardList(
+    state: LeaderboardUiState,
+    onOpenPlayer: (DuoLeaderboardEntryDto) -> Unit,
+) {
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -154,10 +177,14 @@ private fun LeaderboardList(state: LeaderboardUiState, onRetry: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (state.podium.isNotEmpty()) {
-                item { Podium(state.podium, state.myUserId) }
+                item { Podium(state.podium, state.myUserId, onOpenPlayer) }
             }
             items(state.rest, key = { it.userId }) { entry ->
-                LeaderboardRow(entry, isMe = entry.userId == state.myUserId)
+                LeaderboardRow(
+                    entry = entry,
+                    isMe = entry.userId == state.myUserId,
+                    onClick = { onOpenPlayer(entry) },
+                )
             }
             if (state.errorMessage != null) {
                 item {
@@ -191,7 +218,11 @@ private fun LeaderboardList(state: LeaderboardUiState, onRetry: () -> Unit) {
 
 /** Top three, tallest in the middle. */
 @Composable
-private fun Podium(top: List<DuoLeaderboardEntryDto>, myUserId: String?) {
+private fun Podium(
+    top: List<DuoLeaderboardEntryDto>,
+    myUserId: String?,
+    onOpenPlayer: (DuoLeaderboardEntryDto) -> Unit,
+) {
     val ordered = listOfNotNull(top.getOrNull(1), top.getOrNull(0), top.getOrNull(2))
     val heights = listOf(PODIUM_HEIGHTS[1], PODIUM_HEIGHTS[0], PODIUM_HEIGHTS[2])
     val colors = listOf(PODIUM_COLORS[1], PODIUM_COLORS[0], PODIUM_COLORS[2])
@@ -205,7 +236,9 @@ private fun Podium(top: List<DuoLeaderboardEntryDto>, myUserId: String?) {
     ) {
         ordered.forEachIndexed { slot, entry ->
             Column(
-                modifier = Modifier.width(96.dp),
+                modifier = Modifier
+                    .width(96.dp)
+                    .clickable { onOpenPlayer(entry) },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 UserAvatar(
@@ -252,11 +285,17 @@ private fun Podium(top: List<DuoLeaderboardEntryDto>, myUserId: String?) {
 }
 
 @Composable
-private fun LeaderboardRow(entry: DuoLeaderboardEntryDto, isMe: Boolean) {
+private fun LeaderboardRow(
+    entry: DuoLeaderboardEntryDto,
+    isMe: Boolean,
+    onClick: () -> Unit,
+) {
     Surface(
         color = if (isMe) Green500.copy(alpha = 0.12f) else Neutral050,
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -324,3 +363,23 @@ private fun LeaderboardMessage(
         DuoButton(text = actionLabel, onClick = onAction, variant = DuoButtonVariant.Primary)
     }
 }
+
+/**
+ * What a leaderboard row already knows, in the shape the profile card draws.
+ *
+ * Everything the row does not carry -- level, band, study totals -- stays at its default and is
+ * replaced when the full card arrives a moment later. This exists so the sheet opens with content
+ * rather than a spinner; it is never presented as a complete profile.
+ */
+private fun DuoLeaderboardEntryDto.asProfileSeed() = PublicProfileDto(
+    id = userId,
+    username = username,
+    avatarUrl = avatarUrl,
+    pvp = PvpStatsDto(
+        rating = rating,
+        tier = tier,
+        matchesPlayed = matchesPlayed,
+        wins = wins,
+    ),
+    learning = LearningStatsDto(),
+)

@@ -33,6 +33,7 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
                 app.userProgressRepository,
                 app.authRepository,
                 app.battleRepository,
+                app.profileRepository,
             ) as T
 
             LeaderboardViewModel::class.java ->

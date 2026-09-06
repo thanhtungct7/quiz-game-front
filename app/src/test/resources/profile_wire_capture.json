@@ -1,0 +1,126 @@
+{
+ "SELF": {
+  "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+  "username": "Đối thủ",
+  "bio": "Luyện TOEIC mỗi tối.",
+  "avatar_url": "/api/v1/users/3d0b412d-180b-4cb1-ab3b-8cca58fa3867/avatar?v=abcd1234",
+  "joined_at": "2026-01-14T09:30:00Z",
+  "level": 34,
+  "cefr": "B1",
+  "toeic_estimate": 620,
+  "class_code": "MAGE",
+  "day_streak": 12,
+  "best_day_streak": 40,
+  "pvp": {
+   "rating": 1420,
+   "tier": "GOLD",
+   "matches_played": 30,
+   "wins": 19,
+   "losses": 9,
+   "draws": 2,
+   "win_rate": 63.3
+  },
+  "learning": {
+   "challenges_attempted": 420,
+   "challenges_mastered": 355,
+   "total_attempts": 610,
+   "accuracy": 58.2
+  },
+  "title": null,
+  "companion_character": null,
+  "skin_code": null,
+  "achievements": [],
+  "email": "player@example.com",
+  "has_uploaded_avatar": true,
+  "gold": 1250,
+  "energy": {
+   "current": 3,
+   "maximum": 5,
+   "next_regen_at": "2026-01-14T09:30:00Z"
+  },
+  "total_exp": 56100,
+  "exp_for_current_level": 54450,
+  "exp_for_next_level": 57800,
+  "exp_to_next_level": 1700,
+  "next_cefr": "B2",
+  "next_cefr_at_level": 51
+ },
+ "PUBLIC": {
+  "id": "3d0b412d-180b-4cb1-ab3b-8cca58fa3867",
+  "username": "Đối thủ",
+  "bio": "Luyện TOEIC mỗi tối.",
+  "avatar_url": "/api/v1/users/3d0b412d-180b-4cb1-ab3b-8cca58fa3867/avatar?v=abcd1234",
+  "joined_at": "2026-01-14T09:30:00Z",
+  "level": 34,
+  "cefr": "B1",
+  "toeic_estimate": 620,
+  "class_code": "MAGE",
+  "day_streak": 12,
+  "best_day_streak": 40,
+  "pvp": {
+   "rating": 1420,
+   "tier": "GOLD",
+   "matches_played": 30,
+   "wins": 19,
+   "losses": 9,
+   "draws": 2,
+   "win_rate": 63.3
+  },
+  "learning": {
+   "challenges_attempted": 420,
+   "challenges_mastered": 355,
+   "total_attempts": 610,
+   "accuracy": 58.2
+  },
+  "title": null,
+  "companion_character": null,
+  "skin_code": null,
+  "achievements": []
+ },
+ "SELF_NEW_ACCOUNT": {
+  "id": "6b1f9d1c-2f5a-4a7e-9b0e-1d0c6f2a3b41",
+  "username": null,
+  "bio": null,
+  "avatar_url": null,
+  "joined_at": "2026-01-14T09:30:00Z",
+  "level": 1,
+  "cefr": "A1",
+  "toeic_estimate": 10,
+  "class_code": null,
+  "day_streak": 0,
+  "best_day_streak": 0,
+  "pvp": {
+   "rating": 1000,
+   "tier": "BRONZE",
+   "matches_played": 0,
+   "wins": 0,
+   "losses": 0,
+   "draws": 0,
+   "win_rate": 0.0
+  },
+  "learning": {
+   "challenges_attempted": 0,
+   "challenges_mastered": 0,
+   "total_attempts": 0,
+   "accuracy": 0.0
+  },
+  "title": null,
+  "companion_character": null,
+  "skin_code": null,
+  "achievements": [],
+  "email": "new@example.com",
+  "has_uploaded_avatar": false,
+  "gold": 0,
+  "energy": {
+   "current": 5,
+   "maximum": 5,
+   "next_regen_at": null
+  },
+  "total_exp": 0,
+  "exp_for_current_level": 0,
+  "exp_for_next_level": 100,
+  "exp_to_next_level": 100,
+  "next_cefr": "A2",
+  "next_cefr_at_level": 11
+ }
+}

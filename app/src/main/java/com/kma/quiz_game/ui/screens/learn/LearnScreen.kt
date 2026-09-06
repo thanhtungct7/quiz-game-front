@@ -64,9 +64,11 @@ fun LearnScreen(
         Surface(shadowElevation = 2.dp) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 UserProgressBar(
-                    points = uiState.points,
                     hearts = uiState.hearts,
                     isPro = uiState.isPro,
+                    level = uiState.level,
+                    cefr = uiState.cefr,
+                    dayStreak = uiState.dayStreak,
                     modifier = Modifier.weight(1f),
                 )
             }

@@ -2,6 +2,7 @@ package com.kma.quiz_game.ui.screens.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kma.quiz_game.data.remote.dto.SelfProfileDto
 import com.kma.quiz_game.data.remote.dto.UserRead
 import com.kma.quiz_game.data.remote.toUserMessage
 import com.kma.quiz_game.data.repository.ProfileRepository
@@ -30,6 +31,14 @@ data class ProfileUiState(
     val draftBio: String = "",
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
+    /**
+     * The aggregated card: level, CEFR band, PvP record and study totals in one payload.
+     *
+     * Null while it is still in flight, or when it failed. It is deliberately not required for
+     * the screen to render -- identity loads from a different endpoint, and a player whose card
+     * fails to arrive should still see their own name and be able to edit it.
+     */
+    val card: SelfProfileDto? = null,
 ) {
     val hasAvatar: Boolean get() = avatarUrl != null
 
@@ -70,6 +79,13 @@ class ProfileViewModel(private val profileRepository: ProfileRepository) : ViewM
                 _uiState.update { it.applyProfile(user) }
             }
         }
+        // A second collector, not a second fetch: the repository refreshes the card after every
+        // rename and avatar change, and this is what carries that through to the screen.
+        viewModelScope.launch {
+            profileRepository.selfProfile.collect { card ->
+                _uiState.update { it.copy(card = card) }
+            }
+        }
         load()
     }
 
@@ -84,6 +100,9 @@ class ProfileViewModel(private val profileRepository: ProfileRepository) : ViewM
                 _uiState.update { it.copy(isLoading = false, errorMessage = error.toUserMessage()) }
             }
         }
+        // Failing this is not worth an error message: the identity above is what the screen
+        // needs to be usable, and the card is an enrichment that simply stays absent.
+        viewModelScope.launch { profileRepository.refreshSelfProfile() }
     }
 
     fun onUsernameChange(value: String) {

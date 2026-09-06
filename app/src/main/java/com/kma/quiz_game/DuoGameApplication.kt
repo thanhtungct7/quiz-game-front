@@ -12,6 +12,7 @@ import com.kma.quiz_game.data.remote.api.BattleApi
 import com.kma.quiz_game.data.remote.api.ContentApi
 import com.kma.quiz_game.data.remote.api.DuoApi
 import com.kma.quiz_game.data.remote.api.GameApi
+import com.kma.quiz_game.data.remote.api.ProfileApi
 import com.kma.quiz_game.data.remote.api.ProgressApi
 import com.kma.quiz_game.data.remote.api.UsersApi
 import com.kma.quiz_game.data.repository.AuthRepository
@@ -41,7 +42,11 @@ class DuoGameApplication : Application() {
 
     val authRepository: AuthRepository by lazy { AuthRepository(authApi, usersApi, tokenStore) }
 
-    val profileRepository: ProfileRepository by lazy { ProfileRepository(usersApi) }
+    private val profileApi: ProfileApi by lazy { authenticatedRetrofit.create(ProfileApi::class.java) }
+
+    /** Owns both the account (name, bio, avatar) and the aggregated card the RPG profile and the
+     * public modal draw. See [ProfileRepository] for why the two live together. */
+    val profileRepository: ProfileRepository by lazy { ProfileRepository(usersApi, profileApi) }
 
     val learnRepository: LearnRepository by lazy {
         LearnRepository(contentApi, progressApi, database.courseContentDao())

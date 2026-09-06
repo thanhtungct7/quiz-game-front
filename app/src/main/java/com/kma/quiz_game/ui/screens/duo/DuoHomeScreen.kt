@@ -29,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +43,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.remote.dto.DuoDifficulty
 import com.kma.quiz_game.data.remote.dto.DuoPlayerDto
+import com.kma.quiz_game.data.remote.dto.LearningStatsDto
+import com.kma.quiz_game.data.remote.dto.PublicProfileDto
+import com.kma.quiz_game.data.remote.dto.PvpStatsDto
 import com.kma.quiz_game.data.remote.dto.DuoSettingsDto
 import com.kma.quiz_game.data.repository.ConnectionState
 import com.kma.quiz_game.data.repository.DuoPhase
@@ -48,6 +54,7 @@ import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.components.duo.DuoStatsCard
 import com.kma.quiz_game.ui.components.duo.InitialsAvatar
+import com.kma.quiz_game.ui.screens.profile.PublicProfileSheet
 import com.kma.quiz_game.ui.components.duo.RoomCodeCard
 import com.kma.quiz_game.ui.components.game.EnergyPips
 import com.kma.quiz_game.ui.components.game.TierBadge
@@ -79,6 +86,16 @@ fun DuoHomeScreen(
     val viewModel: DuoHomeViewModel = viewModel(factory = rememberAppViewModelFactory())
     val state by viewModel.uiState.collectAsState()
     val session = state.session
+    // The opponent whose card is open, or null. Screen state, so it dies with the screen.
+    var openedOpponent by remember { mutableStateOf<DuoPlayerDto?>(null) }
+
+    openedOpponent?.let { opponent ->
+        PublicProfileSheet(
+            userId = opponent.id,
+            onDismiss = { openedOpponent = null },
+            seed = opponent.asProfileSeed(),
+        )
+    }
 
     // The socket, not a button press, decides when a match exists.
     LaunchedEffect(session.phase) {
@@ -138,6 +155,7 @@ fun DuoHomeScreen(
                 isHost = session.isHost,
                 onStart = viewModel::startMatch,
                 onLeave = viewModel::leaveRoom,
+                onOpenOpponent = { openedOpponent = it },
             )
 
             else -> LobbyActions(
@@ -272,6 +290,7 @@ private fun RoomLobbyPanel(
     isHost: Boolean,
     onStart: () -> Unit,
     onLeave: () -> Unit,
+    onOpenOpponent: (DuoPlayerDto) -> Unit = {},
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         RoomCodeCard(roomCode)
@@ -288,7 +307,11 @@ private fun RoomLobbyPanel(
                 )
             }
         } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                // The last moment before the match starts at which the opponent can be looked up.
+                modifier = Modifier.clickable { onOpenOpponent(opponent) },
+            ) {
                 InitialsAvatar(
                     userId = opponent.id,
                     username = opponent.username ?: "Đối thủ",
@@ -621,3 +644,18 @@ private fun OutOfEnergyDialog(onDismiss: () -> Unit) {
         confirmButton = { TextButton(onClick = onDismiss) { Text("Đã hiểu") } },
     )
 }
+
+/**
+ * What the lobby already knows about the player who just walked in, in the shape the profile card
+ * draws. Everything else stays at its default until the full card lands a moment later.
+ */
+private fun DuoPlayerDto.asProfileSeed() = PublicProfileDto(
+    id = id,
+    username = username,
+    avatarUrl = avatarUrl,
+    level = level,
+    classCode = classCode,
+    dayStreak = dayStreak,
+    pvp = PvpStatsDto(rating = rating, tier = tier),
+    learning = LearningStatsDto(),
+)

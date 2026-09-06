@@ -37,6 +37,14 @@ import com.kma.quiz_game.data.AvatarImage
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.components.UserAvatar
+import com.kma.quiz_game.ui.components.profile.LearningStatsBlock
+import com.kma.quiz_game.ui.components.profile.PvpStatsBlock
+import com.kma.quiz_game.ui.components.profile.RpgProfileCard
+import com.kma.quiz_game.ui.components.profile.StatCellData
+import com.kma.quiz_game.ui.components.profile.StatRow
+import com.kma.quiz_game.ui.theme.Green500
+import com.kma.quiz_game.ui.theme.Orange400
+import com.kma.quiz_game.ui.theme.Sky500
 import com.kma.quiz_game.ui.theme.Neutral600
 import com.kma.quiz_game.ui.theme.Rose500
 import kotlinx.coroutines.launch
@@ -128,6 +136,43 @@ fun ProfileScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        // The RPG half of the profile. Absent until the aggregated card arrives, and absent for
+        // good if it fails -- the identity above is what makes this screen usable, and the card
+        // is an enrichment rather than a prerequisite.
+        uiState.card?.let { card ->
+            Spacer(modifier = Modifier.height(24.dp))
+            RpgProfileCard(
+                profile = card.asPublic(),
+                levelFraction = card.levelFraction,
+                // The avatar is already at the top of this screen, at 112dp with the picker
+                // attached to it. Drawing it again inside the card would be the same face twice.
+                showAvatar = false,
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            StatRow(
+                StatCellData("Vàng", "${card.gold}", Orange400),
+                StatCellData("Kinh nghiệm", "${card.totalExp}", Sky500),
+                StatCellData("Còn tới Lv.${card.level + 1}", "${card.expToNextLevel}", Green500),
+            )
+
+            card.nextCefr?.let { band ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Đạt $band ở cấp ${card.nextCefrAtLevel}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Neutral600,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            PvpStatsBlock(card.pvp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            LearningStatsBlock(card.learning)
+        }
 
         uiState.errorMessage?.let { message ->
             Spacer(modifier = Modifier.height(12.dp))
