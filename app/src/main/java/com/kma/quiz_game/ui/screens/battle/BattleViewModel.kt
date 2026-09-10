@@ -71,6 +71,12 @@ class BattleViewModel(
             battleRepository.session.collect { session ->
                 emitArenaEvents(previous, session)
                 trackCooldown(previous, session)
+                // A new question is a new sentence: whatever was laid out for the last one has to
+                // go, or its tiles would be waiting under the next question's word bank.
+                val token = session.questionToken
+                if (token != null && token != previous?.questionToken) {
+                    local.update { it.copy(placedOptionIds = emptyList()) }
+                }
                 arena.publish(session.toArenaState())
                 previous = session
             }
@@ -124,7 +130,42 @@ class BattleViewModel(
     }
 
     /** Answers the question on screen. The token is the repository's, so a stale tap cannot land. */
-    fun selectOption(optionId: String) = battleRepository.submitAnswer(optionId)
+    fun selectOption(optionId: String) = battleRepository.submitAnswer(listOf(optionId))
+
+    /** ORDER questions: lay one word tile down at the end of the sentence. */
+    fun placeWord(optionId: String) {
+        val session = battleRepository.session.value
+        if (!session.hasQuestion || session.hasAnswered) return
+        if (optionId in local.value.placedOptionIds) return
+        local.update { it.copy(placedOptionIds = it.placedOptionIds + optionId) }
+    }
+
+    /**
+     * ORDER questions: take a word back out of the sentence.
+     *
+     * The tiles after it keep their relative order, so pulling the wrong word out of the middle
+     * does not cost the rest of the sentence.
+     */
+    fun removeWord(optionId: String) {
+        val session = battleRepository.session.value
+        if (!session.hasQuestion || session.hasAnswered) return
+        local.update { it.copy(placedOptionIds = it.placedOptionIds - optionId) }
+    }
+
+    /**
+     * ORDER questions: answer with the sentence as it stands.
+     *
+     * Guarded on the sentence being finished for the same reason the button is greyed out until
+     * then: a partial sentence is not an answer, and the server refuses one rather than marking it
+     * wrong -- so sending it would cost the player a round trip and tell them nothing.
+     */
+    fun checkSentence() {
+        val session = battleRepository.session.value
+        val question = session.question ?: return
+        val placed = local.value.placedOptionIds
+        if (placed.size != question.options.size) return
+        battleRepository.submitAnswer(placed)
+    }
 
     /**
      * Casts an equipped skill.

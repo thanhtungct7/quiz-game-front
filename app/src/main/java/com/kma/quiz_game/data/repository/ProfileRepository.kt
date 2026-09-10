@@ -2,6 +2,8 @@ package com.kma.quiz_game.data.repository
 
 import com.kma.quiz_game.data.remote.api.ProfileApi
 import com.kma.quiz_game.data.remote.api.UsersApi
+import com.kma.quiz_game.data.remote.dto.AchievementListDto
+import com.kma.quiz_game.data.remote.dto.CombatBreakdownDto
 import com.kma.quiz_game.data.remote.dto.PublicProfileDto
 import com.kma.quiz_game.data.remote.dto.SelfProfileDto
 import com.kma.quiz_game.data.remote.dto.UpdateProfileRequest
@@ -47,6 +49,26 @@ class ProfileRepository(
     suspend fun refreshSelfProfile(): Result<SelfProfileDto> = runCatching {
         profileApi.getMyProfile().also { _selfProfile.value = it }
     }
+
+    /**
+     * The itemised build behind the four combat numbers, fetched on demand.
+     *
+     * Not cached and not fetched with the card: it is what a player sees after tapping a bar to
+     * ask where a number came from, and it is the same request either way -- caching it would only
+     * add a way to show a breakdown that no longer adds up to the total beside it.
+     */
+    suspend fun combatBreakdown(): Result<CombatBreakdownDto> =
+        runCatching { profileApi.getMyCombatBreakdown() }
+
+    /**
+     * The whole achievement shelf.
+     *
+     * This request syncs server-side, which is why it is worth making even when the card already
+     * carries three featured badges: an account that passed a threshold before the achievement
+     * existed unlocks it here.
+     */
+    suspend fun achievements(): Result<AchievementListDto> =
+        runCatching { profileApi.getMyAchievements() }
 
     /**
      * Another player's card, fetched fresh every time and deliberately not cached.

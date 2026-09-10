@@ -2,9 +2,15 @@ package com.kma.quiz_game.ui.screens.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kma.quiz_game.data.remote.dto.AchievementListDto
+import com.kma.quiz_game.data.remote.dto.CombatBreakdownDto
+import com.kma.quiz_game.data.remote.dto.InventoryDto
+import com.kma.quiz_game.data.remote.dto.ItemDto
+import com.kma.quiz_game.data.remote.dto.ItemKind
 import com.kma.quiz_game.data.remote.dto.SelfProfileDto
 import com.kma.quiz_game.data.remote.dto.UserRead
 import com.kma.quiz_game.data.remote.toUserMessage
+import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +21,20 @@ import kotlinx.coroutines.launch
 
 const val MAX_USERNAME_LENGTH = 50
 const val MAX_BIO_LENGTH = 300
+
+/** The three faces of the profile. Which one is showing is state, not navigation: a tab is not a
+ * place a player can be sent back to, and putting it on the back stack would make the system
+ * back gesture walk the tabs instead of leaving the screen. */
+enum class ProfileTab { OVERVIEW, STATISTICS, WARDROBE }
+
+/**
+ * The bar a player tapped to ask where a number came from.
+ *
+ * Mana is resolved and carried alongside the other three, but it is not one of the three bars --
+ * the card shows what a fight is won or lost on, and mana is a budget rather than a measure of
+ * the build. It still appears as a column inside the breakdown.
+ */
+enum class CombatStat { HP, ATK, DEFENCE }
 
 data class ProfileUiState(
     val userId: String = "",
@@ -39,6 +59,33 @@ data class ProfileUiState(
      * fails to arrive should still see their own name and be able to edit it.
      */
     val card: SelfProfileDto? = null,
+
+    // --- the tabs ---
+    val selectedTab: ProfileTab = ProfileTab.OVERVIEW,
+
+    /**
+     * The itemised build, fetched the first time a bar is tapped.
+     *
+     * Kept after the modal closes so reopening it is instant; it cannot go stale while the screen
+     * is open, because nothing on this screen changes a build.
+     */
+    val combat: CombatBreakdownDto? = null,
+    val isLoadingCombat: Boolean = false,
+    /** Which bar the open modal is about. Null means the modal is closed. */
+    val breakdownStat: CombatStat? = null,
+
+    /** The whole shelf, fetched when the wardrobe tab is first opened rather than with the card:
+     * it is the heaviest payload here and most sessions never open it. */
+    val achievements: AchievementListDto? = null,
+    val isLoadingAchievements: Boolean = false,
+
+    /** Skins and cards live in the same inventory as equipment; the wardrobe shows the half that
+     * is worn rather than fought with. */
+    val inventory: InventoryDto? = null,
+    val isLoadingInventory: Boolean = false,
+
+    /** The edit sheet. A modal rather than a screen, so a rename does not cost a navigation. */
+    val isEditing: Boolean = false,
 ) {
     val hasAvatar: Boolean get() = avatarUrl != null
 
@@ -62,6 +109,23 @@ data class ProfileUiState(
         get() = draftUsername.trim() != username || draftBio.trim() != bio
 
     val canSubmit: Boolean get() = !isSaving && isDraftValid && hasChanges
+
+    /** Worn, not fought with: the wardrobe draws these and the equipment screen draws the rest. */
+    val skins: List<ItemDto>
+        get() = inventory?.items.orEmpty().filter { it.kind == ItemKind.SKIN }
+
+    /** Collectible cards, shown beside the skins -- they are the other thing a player owns that
+     * does nothing in a fight. */
+    val collectibleCards: List<ItemDto>
+        get() = inventory?.items.orEmpty().filter { it.kind == ItemKind.CARD }
+
+    /**
+     * The badges the overview tab shows.
+     *
+     * From the card rather than from [achievements], so the three are there on first paint
+     * without waiting for the shelf -- the shelf is only fetched if the wardrobe tab is opened.
+     */
+    val featuredAchievements get() = card?.featuredAchievements.orEmpty()
 }
 
 /**
@@ -69,7 +133,10 @@ data class ProfileUiState(
  * the edit screens each get their own instance of this ViewModel, and collecting the shared
  * flow is what keeps them from drifting apart after a save.
  */
-class ProfileViewModel(private val profileRepository: ProfileRepository) : ViewModel() {
+class ProfileViewModel(
+    private val profileRepository: ProfileRepository,
+    private val gameRepository: GameRepository,
+) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
@@ -176,6 +243,94 @@ class ProfileViewModel(private val profileRepository: ProfileRepository) : ViewM
                 isUploadingAvatar = false,
                 errorMessage = "Không đọc được ảnh đã chọn. Hãy thử ảnh khác.",
             )
+        }
+    }
+
+    /**
+     * Switch tabs, and fetch what that tab needs if it has not been fetched yet.
+     *
+     * Loading is per-tab and once-only. Fetching all three up front would make the first paint
+     * wait on two payloads most sessions never look at; refetching on every switch would make the
+     * tabs feel slower the longer the screen stays open.
+     */
+    fun onTabSelected(tab: ProfileTab) {
+        if (_uiState.value.selectedTab == tab) return
+        _uiState.update { it.copy(selectedTab = tab) }
+        if (tab == ProfileTab.WARDROBE) loadWardrobe()
+    }
+
+    /** Opens the breakdown for one bar, fetching the lines the first time. */
+    fun openBreakdown(stat: CombatStat) {
+        _uiState.update { it.copy(breakdownStat = stat) }
+        loadCombatBreakdown()
+    }
+
+    fun closeBreakdown() {
+        _uiState.update { it.copy(breakdownStat = null) }
+    }
+
+    /** Opens the edit sheet on what is currently stored, discarding any abandoned draft. */
+    fun openEditor() {
+        _uiState.update {
+            it.copy(
+                isEditing = true,
+                draftUsername = it.username,
+                draftBio = it.bio,
+                errorMessage = null,
+                isSaved = false,
+            )
+        }
+    }
+
+    fun closeEditor() {
+        _uiState.update { it.copy(isEditing = false) }
+        discardDraft()
+    }
+
+    private fun loadCombatBreakdown() {
+        val state = _uiState.value
+        if (state.combat != null || state.isLoadingCombat) return
+        _uiState.update { it.copy(isLoadingCombat = true) }
+        viewModelScope.launch {
+            profileRepository.combatBreakdown()
+                .onSuccess { breakdown ->
+                    _uiState.update { it.copy(combat = breakdown, isLoadingCombat = false) }
+                }
+                // The modal falls back to the totals the card already carries, so a failed
+                // breakdown costs the itemisation rather than the whole sheet.
+                .onFailure { _uiState.update { it.copy(isLoadingCombat = false) } }
+        }
+    }
+
+    /**
+     * The two payloads behind the wardrobe tab, fetched together the first time it is opened.
+     *
+     * Neither failure is worth an error banner: each section says it is empty, which is what an
+     * account with nothing in it would show anyway.
+     */
+    private fun loadWardrobe() {
+        val state = _uiState.value
+        if (state.achievements == null && !state.isLoadingAchievements) {
+            _uiState.update { it.copy(isLoadingAchievements = true) }
+            viewModelScope.launch {
+                profileRepository.achievements()
+                    .onSuccess { list ->
+                        _uiState.update {
+                            it.copy(achievements = list, isLoadingAchievements = false)
+                        }
+                    }
+                    .onFailure { _uiState.update { it.copy(isLoadingAchievements = false) } }
+            }
+        }
+        if (state.inventory == null && !state.isLoadingInventory) {
+            _uiState.update { it.copy(isLoadingInventory = true) }
+            viewModelScope.launch {
+                gameRepository.inventory()
+                    .onSuccess { held ->
+                        _uiState.update { it.copy(inventory = held, isLoadingInventory = false) }
+                    }
+                    .onFailure { _uiState.update { it.copy(isLoadingInventory = false) } }
+            }
         }
     }
 

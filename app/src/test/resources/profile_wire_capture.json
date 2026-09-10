@@ -26,10 +26,43 @@
    "total_attempts": 610,
    "accuracy": 58.2
   },
+  "combat": {
+   "hp": 118,
+   "atk": 27,
+   "defence": 6,
+   "mana": 14,
+   "damage_permille": 1350
+  },
   "title": null,
   "companion_character": null,
   "skin_code": null,
-  "achievements": [],
+  "featured_achievements": [
+   {
+    "code": "STREAK_7",
+    "name": "Trọn một tuần",
+    "description": "Học bảy ngày liên tiếp.",
+    "category": "LEARNING",
+    "icon_code": "FLAME",
+    "unlocked_at": "2026-01-14T09:30:00Z"
+   },
+   {
+    "code": "PVP_WINS_10",
+    "name": "Tay đấu",
+    "description": "Thắng mười trận đấu.",
+    "category": "PVP",
+    "icon_code": "SWORD",
+    "unlocked_at": "2026-01-14T09:30:00Z"
+   },
+   {
+    "code": "LEVEL_20",
+    "name": "Lão luyện",
+    "description": "Đạt cấp 20.",
+    "category": "PROGRESSION",
+    "icon_code": "LEVEL",
+    "unlocked_at": "2026-01-14T09:30:00Z"
+   }
+  ],
+  "total_achievements_unlocked": 7,
   "email": "player@example.com",
   "has_uploaded_avatar": true,
   "gold": 1250,
@@ -72,10 +105,43 @@
    "total_attempts": 610,
    "accuracy": 58.2
   },
+  "combat": {
+   "hp": 118,
+   "atk": 27,
+   "defence": 6,
+   "mana": 14,
+   "damage_permille": 1350
+  },
   "title": null,
   "companion_character": null,
   "skin_code": null,
-  "achievements": []
+  "featured_achievements": [
+   {
+    "code": "STREAK_7",
+    "name": "Trọn một tuần",
+    "description": "Học bảy ngày liên tiếp.",
+    "category": "LEARNING",
+    "icon_code": "FLAME",
+    "unlocked_at": "2026-01-14T09:30:00Z"
+   },
+   {
+    "code": "PVP_WINS_10",
+    "name": "Tay đấu",
+    "description": "Thắng mười trận đấu.",
+    "category": "PVP",
+    "icon_code": "SWORD",
+    "unlocked_at": "2026-01-14T09:30:00Z"
+   },
+   {
+    "code": "LEVEL_20",
+    "name": "Lão luyện",
+    "description": "Đạt cấp 20.",
+    "category": "PROGRESSION",
+    "icon_code": "LEVEL",
+    "unlocked_at": "2026-01-14T09:30:00Z"
+   }
+  ],
+  "total_achievements_unlocked": 7
  },
  "SELF_NEW_ACCOUNT": {
   "id": "6b1f9d1c-2f5a-4a7e-9b0e-1d0c6f2a3b41",
@@ -104,10 +170,18 @@
    "total_attempts": 0,
    "accuracy": 0.0
   },
+  "combat": {
+   "hp": 100,
+   "atk": 20,
+   "defence": 0,
+   "mana": 0,
+   "damage_permille": 1000
+  },
   "title": null,
   "companion_character": null,
   "skin_code": null,
-  "achievements": [],
+  "featured_achievements": [],
+  "total_achievements_unlocked": 0,
   "email": "new@example.com",
   "has_uploaded_avatar": false,
   "gold": 0,
@@ -122,5 +196,91 @@
   "exp_to_next_level": 100,
   "next_cefr": "A2",
   "next_cefr_at_level": 11
+ },
+ "COMBAT_BREAKDOWN": {
+  "total": {
+   "hp": 118,
+   "atk": 27,
+   "defence": 6,
+   "mana": 14,
+   "damage_permille": 1350
+  },
+  "sources": [
+   {
+    "kind": "CLASS",
+    "code": "MAGE",
+    "label": "Pháp sư",
+    "hp": 90,
+    "atk": 22,
+    "defence": 0,
+    "mana": 10
+   },
+   {
+    "kind": "EQUIPMENT",
+    "code": "STAFF_EMBER",
+    "label": "Trượng Than Hồng",
+    "hp": 0,
+    "atk": 5,
+    "defence": 2,
+    "mana": 2
+   },
+   {
+    "kind": "EQUIPMENT",
+    "code": "ROBE_SILK",
+    "label": "Áo choàng Lụa",
+    "hp": 20,
+    "atk": 0,
+    "defence": 4,
+    "mana": 2
+   },
+   {
+    "kind": "STREAK",
+    "code": "STREAK",
+    "label": "Chuỗi ngày",
+    "hp": 8,
+    "atk": 0,
+    "defence": 0,
+    "mana": 0
+   }
+  ]
+ },
+ "ACHIEVEMENTS": {
+  "unlocked_count": 7,
+  "total": 21,
+  "items": [
+   {
+    "code": "LEVEL_20",
+    "name": "Lão luyện",
+    "description": "Đạt cấp 20.",
+    "category": "PROGRESSION",
+    "icon_code": "LEVEL",
+    "unlocked_at": "2026-01-14T09:30:00Z",
+    "threshold": 20,
+    "current": 20,
+    "unlocked": true
+   },
+   {
+    "code": "LEVEL_50",
+    "name": "Bậc thầy",
+    "description": "Đạt cấp 50.",
+    "category": "PROGRESSION",
+    "icon_code": "CROWN",
+    "unlocked_at": null,
+    "threshold": 50,
+    "current": 34,
+    "unlocked": false
+   },
+   {
+    "code": "BATTLES_WON_25",
+    "name": "Thợ săn quái",
+    "description": "Hạ hai mươi lăm con quái.",
+    "category": "PVE",
+    "icon_code": "SKULL",
+    "unlocked_at": null,
+    "threshold": 25,
+    "current": 0,
+    "unlocked": false
+   }
+  ]
  }
 }

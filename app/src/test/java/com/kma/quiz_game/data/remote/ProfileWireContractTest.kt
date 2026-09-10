@@ -1,5 +1,7 @@
 package com.kma.quiz_game.data.remote
 
+import com.kma.quiz_game.data.remote.dto.AchievementListDto
+import com.kma.quiz_game.data.remote.dto.CombatBreakdownDto
 import com.kma.quiz_game.data.remote.dto.PublicProfileDto
 import com.kma.quiz_game.data.remote.dto.SelfProfileDto
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -52,6 +54,12 @@ class ProfileWireContractTest {
 
     private fun public(): PublicProfileDto =
         json.decodeFromString(PublicProfileDto.serializer(), body("PUBLIC"))
+
+    private fun breakdown(): CombatBreakdownDto =
+        json.decodeFromString(CombatBreakdownDto.serializer(), body("COMBAT_BREAKDOWN"))
+
+    private fun achievements(): AchievementListDto =
+        json.decodeFromString(AchievementListDto.serializer(), body("ACHIEVEMENTS"))
 
     // --- the self card ------------------------------------------------------
 
@@ -156,20 +164,116 @@ class ProfileWireContractTest {
     }
 
     @Test
+    fun `a new account fights on the baseline build`() {
+        val card = self("SELF_NEW_ACCOUNT")
+
+        assertEquals(100, card.combat.hp)
+        assertEquals(20, card.combat.atk)
+        assertEquals(0, card.combat.defence)
+        assertTrue("a new account has earned nothing", card.featuredAchievements.isEmpty())
+        assertEquals(0, card.totalAchievementsUnlocked)
+    }
+
+    @Test
     fun `a new account has an empty level bar rather than a full one`() {
         assertEquals(0f, self("SELF_NEW_ACCOUNT").levelFraction, 0.001f)
     }
 
-    // --- placeholders for modules that do not exist yet ---------------------
+    // --- the combat stats the card draws as bars ----------------------------
+
+    /**
+     * The four resolved numbers. A rename here is the failure this whole fixture exists to catch:
+     * with `ignoreUnknownKeys` a renamed `defence` would draw a defence bar at zero for every
+     * player, and nothing would appear in any log.
+     */
+    @Test
+    fun `the card carries the resolved combat stats`() {
+        val card = self()
+
+        assertEquals(118, card.combat.hp)
+        assertEquals(27, card.combat.atk)
+        assertEquals(6, card.combat.defence)
+        assertEquals(14, card.combat.mana)
+        assertEquals(1350, card.combat.damagePermille)
+    }
 
     @Test
-    fun `character and achievement fields decode as absent`() {
+    fun `another player's card carries the same combat stats`() {
+        assertEquals(118, public().combat.hp)
+        assertEquals(27, public().combat.atk)
+    }
+
+    /** The server's promise about this payload, and the one the breakdown sheet prints a sum to
+     * demonstrate. If it ever stops holding, the sheet is showing arithmetic that does not work. */
+    @Test
+    fun `breakdown lines add up to the total`() {
+        val breakdown = breakdown()
+
+        assertEquals(breakdown.total.hp, breakdown.sources.sumOf { it.hp })
+        assertEquals(breakdown.total.atk, breakdown.sources.sumOf { it.atk })
+        assertEquals(breakdown.total.defence, breakdown.sources.sumOf { it.defence })
+        assertEquals(breakdown.total.mana, breakdown.sources.sumOf { it.mana })
+    }
+
+    @Test
+    fun `breakdown decodes each source kind`() {
+        val kinds = breakdown().sources.map { it.kind }
+
+        assertTrue("CLASS" in kinds)
+        assertTrue("EQUIPMENT" in kinds)
+        assertTrue("STREAK" in kinds)
+        assertEquals("Pháp sư", breakdown().sources.first().label)
+    }
+
+    // --- achievements -------------------------------------------------------
+
+    @Test
+    fun `the card carries the three featured badges`() {
+        val card = self()
+
+        assertEquals(3, card.featuredAchievements.size)
+        assertEquals(7, card.totalAchievementsUnlocked)
+        assertEquals("STREAK_7", card.featuredAchievements.first().code)
+        assertEquals("FLAME", card.featuredAchievements.first().iconCode)
+        assertEquals("LEARNING", card.featuredAchievements.first().category)
+        assertNotNull(card.featuredAchievements.first().unlockedAt)
+    }
+
+    @Test
+    fun `the shelf decodes earned and unearned alike`() {
+        val shelf = achievements()
+
+        assertEquals(7, shelf.unlockedCount)
+        assertEquals(21, shelf.total)
+
+        val earned = shelf.items.first { it.code == "LEVEL_20" }
+        assertTrue(earned.unlocked)
+        assertNotNull(earned.unlockedAt)
+        assertEquals(1f, earned.fraction, 0.001f)
+
+        val inProgress = shelf.items.first { it.code == "LEVEL_50" }
+        assertTrue(!inProgress.unlocked)
+        assertNull(inProgress.unlockedAt)
+        assertEquals(34, inProgress.current)
+        assertEquals(0.68f, inProgress.fraction, 0.001f)
+    }
+
+    @Test
+    fun `an untouched achievement has an empty bar rather than a full one`() {
+        val untouched = achievements().items.first { it.code == "BATTLES_WON_25" }
+
+        assertEquals(0f, untouched.fraction, 0.001f)
+    }
+
+    // --- placeholders for the module that does not exist yet ----------------
+
+    @Test
+    fun `character fields decode as absent`() {
         val card = public()
 
         assertNull(card.title)
         assertNull(card.companionCharacter)
         assertNull(card.skinCode)
-        assertTrue(card.achievements.isEmpty())
     }
 
     /** The public half of the self card is what the shared composable draws. */
@@ -183,5 +287,7 @@ class ProfileWireContractTest {
         assertEquals(card.cefr, shared.cefr)
         assertEquals(card.pvp, shared.pvp)
         assertEquals(card.learning, shared.learning)
+        assertEquals(card.combat, shared.combat)
+        assertEquals(card.featuredAchievements, shared.featuredAchievements)
     }
 }

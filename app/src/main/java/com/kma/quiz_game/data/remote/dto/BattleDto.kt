@@ -205,7 +205,11 @@ data class BattleBlowDto(
 data class BattleAnswerResultDto(
     val token: String,
     val correct: Boolean,
-    val optionId: String,
+    /** The single choice that was answered, or null for an ORDER question, where no one tile is
+     * "the" answer. [optionIds] carries the submission in both cases. */
+    val optionId: String? = null,
+    /** What was submitted: one option, or an ORDER question's tiles in the order they were laid. */
+    val optionIds: List<String> = emptyList(),
     /** Measured on the server from the moment it pushed the question. */
     val elapsedMs: Int = 0,
     val correctOptionIds: List<String> = emptyList(),

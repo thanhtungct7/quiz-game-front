@@ -11,6 +11,7 @@ import com.kma.quiz_game.data.remote.dto.BattleSkillUsedDto
 import com.kma.quiz_game.data.remote.dto.BattleActiveEffectDto
 import com.kma.quiz_game.data.remote.dto.BattleAnswerResultDto
 import com.kma.quiz_game.data.remote.dto.ChallengeDto
+import com.kma.quiz_game.data.remote.dto.ChallengeTypeDto
 import com.kma.quiz_game.data.remote.dto.CourseMonstersDto
 import com.kma.quiz_game.data.remote.dto.MonsterCatalogDto
 import com.kma.quiz_game.data.remote.dto.MonsterDto
@@ -26,8 +27,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 
 /**
  * Where a lesson battle currently is.
@@ -68,7 +71,9 @@ data class BattleSession(
     /** The token that answers the question on screen. Null between two questions. */
     val questionToken: String? = null,
     val question: ChallengeDto? = null,
-    val myOptionId: String? = null,
+    /** What this player has answered: one option, or an ORDER question's tiles in the order they
+     * were laid down. Empty until an answer is locked in. */
+    val myOptionIds: List<String> = emptyList(),
     val answerResult: BattleAnswerResultDto? = null,
     /** Wrong options a REMOVE_OPTIONS skill hid. Cleared on every new question. */
     val removedOptionIds: List<String> = emptyList(),
@@ -93,7 +98,7 @@ data class BattleSession(
     val hasQuestion: Boolean get() = questionToken != null
 
     /** True once an answer is locked in, or while the result of the last one is on screen. */
-    val hasAnswered: Boolean get() = myOptionId != null
+    val hasAnswered: Boolean get() = myOptionIds.isNotEmpty()
 
     val isFighting: Boolean
         get() = phase == BattlePhase.STARTING || phase == BattlePhase.FIGHTING
@@ -230,19 +235,30 @@ class BattleRepository(
     /**
      * Answers the question on screen.
      *
-     * Fires on the tap itself: the server times the answer from the moment it pushed the question,
-     * so a confirm step would spend the speed bonus on a second thought. The token is the session's
-     * own -- a caller cannot answer a question that has already closed.
+     * [optionIds] is one option for a single-choice question, and every word tile in the order it
+     * was laid down for an ORDER one. Which of the two shapes goes on the wire is decided by the
+     * question's own type rather than by how many ids came in: a one-word sentence is still a
+     * sentence, and the server takes either shape but never both at once.
+     *
+     * Fires on the tap that completes the answer: the server times it from the moment it pushed
+     * the question, so a confirm step would spend the speed bonus on a second thought. The token
+     * is the session's own -- a caller cannot answer a question that has already closed.
      */
-    fun submitAnswer(optionId: String) {
-        val token = _session.value.questionToken ?: return
-        if (_session.value.myOptionId != null) return
-        _session.update { it.copy(myOptionId = optionId) }
+    fun submitAnswer(optionIds: List<String>) {
+        val current = _session.value
+        val token = current.questionToken ?: return
+        if (optionIds.isEmpty() || current.hasAnswered) return
+        _session.update { it.copy(myOptionIds = optionIds) }
+        val isOrder = current.question?.type == ChallengeTypeDto.ORDER
         socket.send(
             BattleClientEvent.ANSWER_SUBMIT,
             buildJsonObject {
                 put("token", token)
-                put("option_id", optionId)
+                if (isOrder) {
+                    putJsonArray("option_ids") { optionIds.forEach { add(it) } }
+                } else {
+                    put("option_id", optionIds.first())
+                }
             },
         )
     }
@@ -359,7 +375,7 @@ class BattleRepository(
                 poolPass = 0,
                 questionToken = null,
                 question = null,
-                myOptionId = null,
+                myOptionIds = emptyList(),
                 answerResult = null,
                 removedOptionIds = emptyList(),
                 effects = emptyList(),
@@ -396,7 +412,7 @@ class BattleRepository(
                 questionToken = event.data.token,
                 question = event.data.question,
                 poolPass = event.data.poolPass,
-                myOptionId = null,
+                myOptionIds = emptyList(),
                 answerResult = null,
                 // A skill's reveal only applies to the question it was cast on.
                 removedOptionIds = emptyList(),
@@ -410,7 +426,7 @@ class BattleRepository(
             is BattleEvent.AnswerResult -> state.copy(
                 questionToken = null,
                 answerResult = event.data,
-                myOptionId = event.data.optionId,
+                myOptionIds = event.data.optionIds,
                 mana = event.data.yourMana,
                 combo = event.data.combo,
                 monsterHp = event.data.monsterHp,
@@ -455,9 +471,9 @@ class BattleRepository(
                 phase = if (state.phase == BattlePhase.STARTING) BattlePhase.IDLE else state.phase,
                 // A refused answer never landed, so the option must be released or the player is
                 // stuck looking at a selected answer nothing will ever resolve.
-                myOptionId = if (event.data.errorCode == BattleErrorCode.INVALID_OPTION ||
+                myOptionIds = if (event.data.errorCode == BattleErrorCode.INVALID_OPTION ||
                     event.data.errorCode == BattleErrorCode.QUESTION_CLOSED
-                ) null else state.myOptionId,
+                ) emptyList() else state.myOptionIds,
                 lastError = event.data.errorCode,
             )
         }

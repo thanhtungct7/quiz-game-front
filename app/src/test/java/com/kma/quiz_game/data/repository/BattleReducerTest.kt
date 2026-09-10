@@ -133,6 +133,7 @@ class BattleReducerTest {
                 token = token,
                 correct = true,
                 optionId = "a",
+                optionIds = listOf("a"),
                 elapsedMs = 4_200,
                 correctOptionIds = listOf("a"),
                 explanation = "vì chủ ngữ số ít",
@@ -149,6 +150,7 @@ class BattleReducerTest {
             token = token,
             correct = false,
             optionId = "b",
+            optionIds = listOf("b"),
             elapsedMs = 9_100,
             correctOptionIds = listOf("a"),
             explanation = null,
@@ -217,7 +219,7 @@ class BattleReducerTest {
         assertEquals(BattlePhase.FIGHTING, state.phase)
         assertTrue(state.hasQuestion)
         assertEquals("t1", state.questionToken)
-        assertNull(state.myOptionId)
+        assertTrue(state.myOptionIds.isEmpty())
         assertNull(state.answerResult)
     }
 
@@ -267,7 +269,7 @@ class BattleReducerTest {
 
         assertEquals("t2", state.questionToken)
         assertNull(state.answerResult)
-        assertNull(state.myOptionId)
+        assertTrue(state.myOptionIds.isEmpty())
         assertTrue(state.removedOptionIds.isEmpty())
     }
 
@@ -364,13 +366,13 @@ class BattleReducerTest {
     @Test
     fun `a refused answer releases the option instead of leaving it stuck selected`() {
         var state = fighting()
-        state = state.copy(myOptionId = "a")
+        state = state.copy(myOptionIds = listOf("a"))
         state = reduce(
             state,
             BattleEvent.Failed(BattleErrorDto(code = "QUESTION_CLOSED", message = "too late")),
         )
 
-        assertNull(state.myOptionId)
+        assertTrue(state.myOptionIds.isEmpty())
         assertEquals(BattlePhase.FIGHTING, state.phase)
     }
 

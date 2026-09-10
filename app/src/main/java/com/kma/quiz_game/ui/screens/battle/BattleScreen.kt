@@ -144,7 +144,11 @@ fun BattleScreen(
                         QuestionBody(
                             session = session,
                             question = question,
+                            placedOptionIds = state.placedOptionIds,
                             onSelect = viewModel::selectOption,
+                            onPlace = viewModel::placeWord,
+                            onRemove = viewModel::removeWord,
+                            onCheck = viewModel::checkSentence,
                         )
                     }
                 }
@@ -380,7 +384,11 @@ private fun BetweenQuestions(session: BattleSession) {
 private fun QuestionBody(
     session: BattleSession,
     question: ChallengeDto,
+    placedOptionIds: List<String>,
     onSelect: (String) -> Unit,
+    onPlace: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onCheck: () -> Unit,
 ) {
     val enabled = session.hasQuestion && !session.hasAnswered
     // A REMOVE_OPTIONS skill hides wrong options from the caster, for this question only.
@@ -421,7 +429,19 @@ private fun QuestionBody(
         }
         Spacer(Modifier.height(16.dp))
 
-        if (question.type == ChallengeTypeDto.ASSIST) {
+        if (question.type == ChallengeTypeDto.ORDER) {
+            // The sentence is the answer, so the whole word bank is the surface -- there is no
+            // grid of options to draw and no single option to select.
+            BattleSentenceBuilder(
+                tiles = options,
+                placedIds = placedOptionIds,
+                state = sentenceState(session),
+                onPlace = onPlace,
+                onRemove = onRemove,
+                onCheck = onCheck,
+                enabled = enabled,
+            )
+        } else if (question.type == ChallengeTypeDto.ASSIST) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 options.forEach { option ->
                     BattleOptionCard(
@@ -527,11 +547,23 @@ private fun AnswerReveal(session: BattleSession) {
     }
 }
 
+/**
+ * How the built sentence should read: still being answered, or already graded.
+ *
+ * A sentence is right or wrong as a whole -- no tile of it is individually correct -- so unlike
+ * [optionState] this looks only at whether the answer landed.
+ */
+private fun sentenceState(session: BattleSession): ChallengeOptionState {
+    val result = session.answerResult
+    if (result == null || session.hasQuestion) return ChallengeOptionState.NONE
+    return if (result.correct) ChallengeOptionState.CORRECT else ChallengeOptionState.WRONG
+}
+
 /** Options stay neutral until `answer.result` arrives -- `question.push` never carries the key. */
 private fun optionState(optionId: String, session: BattleSession): ChallengeOptionState {
     val result = session.answerResult
     if (result == null || session.hasQuestion) {
-        return if (session.myOptionId == optionId) ChallengeOptionState.SELECTED
+        return if (optionId in session.myOptionIds) ChallengeOptionState.SELECTED
         else ChallengeOptionState.NONE
     }
     return when {

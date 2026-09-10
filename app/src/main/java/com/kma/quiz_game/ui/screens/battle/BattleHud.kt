@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kma.quiz_game.data.remote.dto.ChallengeOptionDto
 import com.kma.quiz_game.data.remote.dto.LoadoutSlotDto
 import com.kma.quiz_game.ui.components.ChallengeOptionState
 import com.kma.quiz_game.ui.components.game.effectDescription
@@ -298,6 +300,182 @@ private fun BattleSkillSlot(
         )
     }
 }
+
+/**
+ * The word-ordering ("ghép câu") answer surface, in stone.
+ *
+ * A local counterpart to `ui/components/SentenceBuilder`, not a call into it: that one is drawn by
+ * the lesson screen in the app's light theme, and the same rule the bubble above follows applies
+ * here -- this screen is the only place a word tile has to be stone.
+ *
+ * Three bands, in the shape every language app builds a sentence in. The answer sits on ruled
+ * lines, laid out behind the words rather than around them: the lines are always there, so an
+ * empty answer still reads as somewhere to put words, and the sentence does not change shape as it
+ * fills. The word bank is under it, and a word already used keeps its slot there -- an empty
+ * outline -- so nothing reflows under a thumb already travelling towards the next word. The check
+ * button closes the answer, and only lights up once every tile has been placed: a partial sentence
+ * is not a sentence, and the server refuses one rather than marking it wrong.
+ */
+@Composable
+fun BattleSentenceBuilder(
+    tiles: List<ChallengeOptionDto>,
+    placedIds: List<String>,
+    state: ChallengeOptionState,
+    onPlace: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onCheck: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val tilesById = remember(tiles) { tiles.associateBy(ChallengeOptionDto::id) }
+    val accent = when (state) {
+        ChallengeOptionState.CORRECT -> BattleTheme.Venom
+        ChallengeOptionState.WRONG -> BattleTheme.Blood
+        else -> BattleTheme.Edge
+    }
+    val ink = when (state) {
+        ChallengeOptionState.CORRECT -> BattleTheme.Venom
+        ChallengeOptionState.WRONG -> BattleTheme.Blood
+        else -> BattleTheme.Parchment
+    }
+    val complete = placedIds.size == tiles.size && tiles.isNotEmpty()
+
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // The ruled lines, behind the words: drawn at exactly one word's height apiece, so a
+            // word laid down lands on a line instead of floating between two.
+            Column(modifier = Modifier.fillMaxWidth()) {
+                repeat(SENTENCE_LINES) {
+                    Box(modifier = Modifier.fillMaxWidth().height(SENTENCE_LINE_HEIGHT)) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(accent),
+                        )
+                    }
+                }
+            }
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(SENTENCE_LINE_GAP),
+            ) {
+                placedIds.forEach { id ->
+                    val tile = tilesById[id] ?: return@forEach
+                    BattleWordChip(
+                        text = tile.text,
+                        contentColor = ink,
+                        borderColor = accent,
+                        enabled = enabled,
+                        onClick = { onRemove(id) },
+                    )
+                }
+            }
+        }
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            tiles.forEach { tile ->
+                val used = tile.id in placedIds
+                // The used word keeps its slot -- invisible, but still measured -- so the bank
+                // never reflows mid-answer.
+                Box {
+                    BattleWordChip(
+                        text = tile.text,
+                        contentColor = BattleTheme.Parchment,
+                        borderColor = BattleTheme.Edge,
+                        enabled = enabled && !used,
+                        onClick = { onPlace(tile.id) },
+                        modifier = if (used) Modifier.alpha(0f) else Modifier,
+                    )
+                    if (used) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(BattleTheme.TileShape)
+                                .background(BattleTheme.StoneSunken)
+                                .border(1.dp, BattleTheme.Edge, BattleTheme.TileShape),
+                        )
+                    }
+                }
+            }
+        }
+
+        BattleCheckButton(
+            enabled = enabled && complete,
+            onClick = onCheck,
+        )
+    }
+}
+
+/** Closes a built sentence. Dark and unlit until every word is down. */
+@Composable
+private fun BattleCheckButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(BattleTheme.TileShape)
+            .background(if (enabled) BattleTheme.tileLitBrush else BattleTheme.tileBrush)
+            .border(2.dp, if (enabled) BattleTheme.Gold else BattleTheme.Edge, BattleTheme.TileShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = enabled,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "KIỂM TRA",
+            style = MaterialTheme.typography.titleMedium,
+            color = if (enabled) BattleTheme.Gold else BattleTheme.ParchmentFaint,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun BattleWordChip(
+    text: String,
+    contentColor: Color,
+    borderColor: Color,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .height(SENTENCE_WORD_HEIGHT)
+            .clip(BattleTheme.TileShape)
+            .background(BattleTheme.tileBrush)
+            .border(2.dp, borderColor, BattleTheme.TileShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = enabled,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = text, style = MaterialTheme.typography.titleMedium, color = contentColor)
+    }
+}
+
+/** One word tile, and the ruled line it sits on: the line is a word tall plus the gap under it. */
+private val SENTENCE_WORD_HEIGHT = 44.dp
+private val SENTENCE_LINE_GAP = 8.dp
+private val SENTENCE_LINE_HEIGHT = SENTENCE_WORD_HEIGHT + SENTENCE_LINE_GAP
+
+/** How many lines the answer is ruled for. Two holds the longest sentence in the bank. */
+private const val SENTENCE_LINES = 2
 
 /** Where the server caps mana; the bar needs a maximum and the session only carries the amount. */
 private const val MAX_MANA = 100

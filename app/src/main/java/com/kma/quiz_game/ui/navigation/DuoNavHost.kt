@@ -35,8 +35,7 @@ import com.kma.quiz_game.ui.screens.game.SkillTreeScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.lesson.LessonScreen
-import com.kma.quiz_game.ui.screens.profile.EditProfileScreen
-import com.kma.quiz_game.ui.screens.profile.ProfileScreen
+import com.kma.quiz_game.ui.screens.profile.MyProfileScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -137,13 +136,8 @@ fun DuoNavHost() {
                 )
             }
             composable<Destination.Profile> {
-                ProfileScreen(
-                    onEditProfile = { navController.navigate(Destination.EditProfile) },
-                    onLogout = { coroutineScope.launch { app.logout() } },
-                )
-            }
-            composable<Destination.EditProfile> {
-                EditProfileScreen(onDone = { navController.popBackStack() })
+                // Editing is a sheet inside this screen now, not a route: see [EditProfileSheet].
+                MyProfileScreen(onLogout = { coroutineScope.launch { app.logout() } })
             }
             composable<Destination.Shop> {
                 InventoryScreen()

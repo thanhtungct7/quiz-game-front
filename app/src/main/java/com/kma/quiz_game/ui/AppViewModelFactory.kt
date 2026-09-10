@@ -49,7 +49,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
 
             DuoHistoryViewModel::class.java -> DuoHistoryViewModel(app.duoRepository) as T
 
-            ProfileViewModel::class.java -> ProfileViewModel(app.profileRepository) as T
+            ProfileViewModel::class.java ->
+                ProfileViewModel(app.profileRepository, app.gameRepository) as T
 
             ClassPickerViewModel::class.java -> ClassPickerViewModel(app.gameRepository) as T
 

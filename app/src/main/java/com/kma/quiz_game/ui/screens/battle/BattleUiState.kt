@@ -31,6 +31,13 @@ data class BattleUiState(
      * and a player who has confirmed they want out must not be held in the fight by it.
      */
     val hasLeft: Boolean = false,
+    /**
+     * ORDER questions only: the word tiles placed into the sentence so far, in that order.
+     *
+     * Local to the screen because a half-built sentence is not an answer -- nothing goes to the
+     * server until the last tile lands. Cleared whenever a new question is pushed.
+     */
+    val placedOptionIds: List<String> = emptyList(),
 ) {
     /** Whether this skill can be cast right now, at this instant on the server's clock. */
     fun canCast(code: String, manaCost: Int, serverNowMs: Long): Boolean =
