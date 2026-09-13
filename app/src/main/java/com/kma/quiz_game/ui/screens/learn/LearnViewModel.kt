@@ -2,36 +2,27 @@ package com.kma.quiz_game.ui.screens.learn
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kma.quiz_game.data.GameConstants
 import com.kma.quiz_game.data.remote.dto.CourseMonsterDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressStatusDto
 import com.kma.quiz_game.data.remote.toUserMessage
-import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.BattleRepository
 import com.kma.quiz_game.data.repository.CourseTree
 import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
-import com.kma.quiz_game.data.repository.UserProgressRepository
 import com.kma.quiz_game.ui.components.LessonNodeStatus
 import com.kma.quiz_game.ui.components.LessonPathItem
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class LearnViewModel(
     private val learnRepository: LearnRepository,
-    private val userProgressRepository: UserProgressRepository,
-    private val authRepository: AuthRepository,
     private val battleRepository: BattleRepository,
     private val profileRepository: ProfileRepository,
     private val gameRepository: GameRepository,
@@ -48,10 +39,6 @@ class LearnViewModel(
     private val monstersByLesson = MutableStateFlow<Map<String, CourseMonsterDto>>(emptyMap())
     private val isSyncing = MutableStateFlow(true)
     private val errorMessage = MutableStateFlow<String?>(null)
-
-    private val userProgress = authRepository.currentUserId
-        .filterNotNull()
-        .flatMapLatest { userProgressRepository.observe(it) }
 
     /** The three flows the path itself is built from, folded first: `combine` only has a typed
      * overload up to five, and the path deserves the readable half of the budget. */
@@ -73,20 +60,17 @@ class LearnViewModel(
 
     val uiState: StateFlow<LearnUiState> = combine(
         path,
-        userProgress,
         isSyncing,
         errorMessage,
         // The header strip's level and band. Shared with the profile tab through the repositories,
         // so a level gained mid-session shows up here without this screen asking again.
         standing,
-    ) { (units, hasTree), gamification, syncing, error, (card, game) ->
+    ) { (units, hasTree), syncing, error, (card, game) ->
         LearnUiState(
             isLoading = !hasTree && syncing,
             isSyncing = syncing,
             units = units,
-            hearts = gamification?.hearts ?: GameConstants.MAX_HEARTS,
-            points = gamification?.points ?: 0,
-            isPro = gamification?.isPro ?: false,
+            energy = game?.energy,
             level = card?.level,
             cefr = card?.cefr.orEmpty(),
             dayStreak = card?.dayStreak ?: 0,
@@ -94,12 +78,6 @@ class LearnViewModel(
             errorMessage = error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LearnUiState())
-
-    init {
-        viewModelScope.launch {
-            userProgressRepository.getOrCreate(authRepository.currentUserId.filterNotNull().first())
-        }
-    }
 
     /**
      * Revalidate the cached path and reload progress.

@@ -31,8 +31,6 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
         return when (modelClass) {
             LearnViewModel::class.java -> LearnViewModel(
                 app.learnRepository,
-                app.userProgressRepository,
-                app.authRepository,
                 app.battleRepository,
                 app.profileRepository,
                 app.gameRepository,

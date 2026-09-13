@@ -5,21 +5,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import androidx.room.Upsert
 import com.kma.quiz_game.data.local.entities.CachedCourseEntity
 import com.kma.quiz_game.data.local.entities.CachedLessonEntity
 import com.kma.quiz_game.data.local.entities.CachedUnitEntity
-import com.kma.quiz_game.data.local.entities.UserProgressEntity
 import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface UserProgressDao {
-    @Query("SELECT * FROM user_progress WHERE userId = :userId")
-    fun observe(userId: String): Flow<UserProgressEntity?>
-
-    @Upsert
-    suspend fun upsert(progress: UserProgressEntity)
-}
 
 @Dao
 interface CourseContentDao {

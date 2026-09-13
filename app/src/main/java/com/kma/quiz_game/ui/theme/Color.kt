@@ -12,7 +12,7 @@ val Sky400 = Color(0xFF2B70C9)
 val Sky500 = Color(0xFF1CB0F6)
 val Sky600 = Color(0xFF1899D6)
 
-// Danger / wrong answers / hearts empty
+// Danger / wrong answers
 val Rose500 = Color(0xFFFF4B4B)
 val Rose600 = Color(0xFFEA2B2B)
 

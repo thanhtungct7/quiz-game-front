@@ -5,15 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.kma.quiz_game.data.local.dao.CourseContentDao
-import com.kma.quiz_game.data.local.dao.UserProgressDao
 import com.kma.quiz_game.data.local.entities.CachedCourseEntity
 import com.kma.quiz_game.data.local.entities.CachedLessonEntity
 import com.kma.quiz_game.data.local.entities.CachedUnitEntity
-import com.kma.quiz_game.data.local.entities.UserProgressEntity
 
 @Database(
     entities = [
-        UserProgressEntity::class,
         CachedCourseEntity::class,
         CachedUnitEntity::class,
         CachedLessonEntity::class,
@@ -21,13 +18,13 @@ import com.kma.quiz_game.data.local.entities.UserProgressEntity
     // 1 -> 2: course/unit/lesson/challenge/challenge_progress tables dropped when content moved
     // to the backend API. 2 -> 3: cached_* tables added so the learn path renders from disk on
     // launch instead of being refetched every time. No real migration needed (pre-release,
-    // dev-only data) -- dropping the cache just costs one refetch on the next launch.
-    version = 3,
+    // dev-only data) -- dropping the cache just costs one refetch on the next launch. 3 -> 4: the
+    // local-only user_progress table (hearts/points/pro) dropped along with the hearts system; the
+    // destructive fallback clears it, and the course cache refetches once.
+    version = 4,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun userProgressDao(): UserProgressDao
-
     abstract fun courseContentDao(): CourseContentDao
 
     companion object {

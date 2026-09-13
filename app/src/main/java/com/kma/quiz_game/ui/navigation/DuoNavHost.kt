@@ -35,7 +35,6 @@ import com.kma.quiz_game.ui.screens.game.LoadoutScreen
 import com.kma.quiz_game.ui.screens.game.SkillTreeScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
-import com.kma.quiz_game.ui.screens.lesson.LessonScreen
 import com.kma.quiz_game.ui.screens.profile.MyProfileScreen
 import kotlinx.coroutines.launch
 
@@ -89,8 +88,7 @@ fun DuoNavHost() {
         ) {
             composable<Destination.Learn> {
                 LearnScreen(
-                    // A gate on the path is a monster now. The plain lesson screen stays wired
-                    // below as the way back if the battle route ever has to be switched off.
+                    // A gate on the path is a monster now.
                     onLessonClick = { lessonId -> navController.navigate(Destination.Battle(lessonId)) },
                     onStartBenchmark = { capLevel ->
                         navController.navigate(Destination.BenchmarkExam(capLevel))
@@ -159,13 +157,6 @@ fun DuoNavHost() {
                 LoadoutScreen(
                     onBack = { navController.popBackStack() },
                     onOpenSkillTree = { navController.navigate(Destination.GameSkills) },
-                )
-            }
-            composable<Destination.Lesson> { entry ->
-                val lesson = entry.toRoute<Destination.Lesson>()
-                LessonScreen(
-                    lessonId = lesson.lessonId,
-                    onExit = { navController.popBackStack() },
                 )
             }
             composable<Destination.BenchmarkExam> { entry ->

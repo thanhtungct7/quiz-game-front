@@ -1,15 +1,12 @@
 package com.kma.quiz_game.ui.components
 
+import com.kma.quiz_game.data.remote.dto.EnergyDto
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AllInclusive
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,8 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kma.quiz_game.ui.components.profile.CefrBadge
 import com.kma.quiz_game.ui.theme.Orange400
+import com.kma.quiz_game.ui.theme.Indigo500
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
-import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Sky500
 
 /**
@@ -32,14 +29,13 @@ import com.kma.quiz_game.ui.theme.Sky500
  * points total, which meant the one strip on screen at all times was the one thing in the app not
  * telling the truth about the account.
  *
- * [level] and [cefr] come from the aggregated profile, [hearts] from the energy bar. A null
- * [level] means the profile has not loaded yet, and those two chips are simply left out rather
- * than shown as a placeholder that will visibly change a moment later.
+ * [level] and [cefr] come from the aggregated profile, [energy] from the game profile. A null
+ * [level] or [energy] means that profile has not loaded yet, and its chips are simply left out
+ * rather than shown as a placeholder that will visibly change a moment later.
  */
 @Composable
 fun UserProgressBar(
-    hearts: Int,
-    isPro: Boolean,
+    energy: EnergyDto?,
     modifier: Modifier = Modifier,
     level: Int? = null,
     cefr: String = "",
@@ -64,7 +60,7 @@ fun UserProgressBar(
             LabelledStat(symbol = "🔥", value = "$dayStreak", tint = Orange400)
         }
         Spacer(Modifier.width(0.dp))
-        HeartsChip(hearts = hearts, isPro = isPro)
+        energy?.let { EnergyChip(it) }
     }
 }
 
@@ -84,34 +80,16 @@ private fun LabelledStat(symbol: String, value: String, tint: Color) {
     }
 }
 
+/** Current over maximum: queueing a duo match spends one, finishing a lesson refills. */
 @Composable
-private fun HeartsChip(hearts: Int, isPro: Boolean) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(text = "❤", style = MaterialTheme.typography.titleMedium, color = Rose500)
-        if (isPro) {
-            Icon(
-                Icons.Filled.AllInclusive,
-                contentDescription = "không giới hạn",
-                tint = Rose500,
-                modifier = Modifier.size(20.dp),
-            )
-        } else {
-            Text(
-                text = hearts.toString(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-    }
+private fun EnergyChip(energy: EnergyDto) {
+    LabelledStat(symbol = "⚡", value = "${energy.current}/${energy.maximum}", tint = Indigo500)
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun UserProgressBarPreview() {
     Quiz_gameTheme {
-        UserProgressBar(hearts = 3, isPro = false, level = 34, cefr = "B1", dayStreak = 12)
+        UserProgressBar(energy = EnergyDto(current = 3, maximum = 5), level = 34, cefr = "B1", dayStreak = 12)
     }
 }

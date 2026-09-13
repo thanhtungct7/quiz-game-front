@@ -1,6 +1,6 @@
 package com.kma.quiz_game.ui.screens.learn
 
-import com.kma.quiz_game.data.GameConstants
+import com.kma.quiz_game.data.remote.dto.EnergyDto
 import com.kma.quiz_game.ui.components.LessonPathItem
 
 data class UnitUi(
@@ -16,9 +16,9 @@ data class LearnUiState(
     /** A background refresh is in flight over an already-drawn path. */
     val isSyncing: Boolean = false,
     val units: List<UnitUi> = emptyList(),
-    val hearts: Int = GameConstants.MAX_HEARTS,
-    val points: Int = 0,
-    val isPro: Boolean = false,
+    /** The energy bar from the game profile -- the one resource the server actually spends. Null
+     * until the profile arrives, so the header leaves the chip out instead of guessing. */
+    val energy: EnergyDto? = null,
     /** From the aggregated profile. Null until it arrives, so the header can leave the chip out
      * rather than draw a placeholder level that visibly changes a moment later. */
     val level: Int? = null,

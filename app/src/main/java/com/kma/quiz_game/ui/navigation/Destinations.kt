@@ -68,10 +68,6 @@ sealed interface Destination {
     @Serializable
     data object Profile : Destination
 
-    /** Full screen: it owns the keyboard, and the bottom bar would sit on top of it. */
-    @Serializable
-    data class Lesson(val lessonId: String) : Destination
-
     /**
      * The lesson fought instead of studied. Full screen -- the bottom bar would sit on the
      * health bars.

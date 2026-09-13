@@ -21,31 +21,6 @@ fun ExitDialog(
 }
 
 @Composable
-fun HeartsDialog(
-    canRefillWithPoints: Boolean,
-    onDismiss: () -> Unit,
-    onRefillWithPoints: () -> Unit,
-    onGoToShop: () -> Unit,
-) {
-    BaseMascotDialog(
-        mascotRes = R.drawable.mascot_sad,
-        title = "You ran out of hearts!",
-        description = "Refill your hearts with points, or get unlimited hearts to keep practicing.",
-        onDismiss = onDismiss,
-        actions = {
-            DuoButton(
-                text = "Refill hearts",
-                onClick = onRefillWithPoints,
-                variant = DuoButtonVariant.Primary,
-                enabled = canRefillWithPoints,
-            )
-            DuoButton(text = "Get unlimited hearts", onClick = onGoToShop, variant = DuoButtonVariant.Super)
-            DuoButton(text = "No thanks", onClick = onDismiss, variant = DuoButtonVariant.Outline)
-        },
-    )
-}
-
-@Composable
 fun PracticeDialog(
     onDismiss: () -> Unit,
     onPractice: () -> Unit,
@@ -53,7 +28,7 @@ fun PracticeDialog(
     BaseMascotDialog(
         mascotRes = R.drawable.mascot,
         title = "Ready to practice?",
-        description = "This lesson is already complete. Practicing lets you earn points and regain hearts.",
+        description = "This lesson is already complete. Fighting it again is still good practice.",
         onDismiss = onDismiss,
         actions = {
             DuoButton(text = "Practice lesson", onClick = onPractice, variant = DuoButtonVariant.Primary)

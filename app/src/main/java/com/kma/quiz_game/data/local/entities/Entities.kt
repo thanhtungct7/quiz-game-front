@@ -5,21 +5,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Local-only gamification state (hearts/points/pro), keyed by the real backend user id. The
- * backend has no concept of this -- learning progress and challenge content come from the API
- * instead (see data/remote and data/repository).
- */
-@Entity(tableName = "user_progress")
-data class UserProgressEntity(
-    @PrimaryKey val userId: String,
-    val userName: String = "User",
-    val activeCourseId: String? = null,
-    val hearts: Int,
-    val points: Int = 0,
-    val isPro: Boolean = false,
-)
-
-/**
  * Cached copy of the learn path from `GET courses/{id}/tree`.
  *
  * The path is the same for every user and changes only when an admin edits content, so the app

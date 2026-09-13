@@ -19,7 +19,7 @@ import androidx.compose.ui.window.Dialog
 import com.kma.quiz_game.ui.theme.ShapeXxl
 
 /**
- * Shared shell for the three modals of the original app (exit / out-of-hearts / practice):
+ * Shared shell for the app's mascot modals (exit, practice, leaving a battle, forfeiting a match):
  * a centered mascot illustration, a title, a description, and stacked full-width actions.
  */
 @Composable
