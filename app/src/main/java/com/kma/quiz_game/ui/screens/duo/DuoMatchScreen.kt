@@ -181,6 +181,9 @@ fun DuoMatchScreen(
                     canCast = session.phase == DuoPhase.FIGHTING && serverNow >= session.stunnedUntil,
                     usedCodes = state.rechargingCodes(serverNow),
                     onCast = viewModel::castSkill,
+                    // Duels stay pedagogical: only the three knowledge lifelines are castable here,
+                    // see duo-game-back/android.md §6.3.
+                    isPvp = true,
                 )
                 // The one place a player learns the skill bar exists at all, so it opens the
                 // loadout *over* the match rather than making them leave it.

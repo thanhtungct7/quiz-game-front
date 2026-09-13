@@ -34,6 +34,7 @@ import com.kma.quiz_game.ui.components.UserAvatar
 import com.kma.quiz_game.ui.components.game.TierBadge
 import com.kma.quiz_game.ui.components.game.tierStyle
 import com.kma.quiz_game.ui.screens.profile.CombatStat
+import com.kma.quiz_game.ui.theme.Neutral400
 import com.kma.quiz_game.ui.theme.Neutral800
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
@@ -88,6 +89,7 @@ fun RpgIdentityCard(
                 .fillMaxWidth()
                 .height(portraitHeight),
             glow = glow,
+            skinCode = profile.skinCode,
         )
 
         Spacer(Modifier.height(6.dp))
@@ -186,15 +188,23 @@ private fun LevelBadge(level: Int) {
 /**
  * What lights the stage the character stands on.
  *
- * A skin decides it once the character module ships one; until then the CEFR band does, because
- * it is the one thing on the card the player has unambiguously earned by studying -- which is what
- * this app is for. Reusing [cefrStyle] means the glow, the band badge and the level bar cannot
- * drift into three different opinions about what B1 looks like.
+ * The worn skin decides it, and the CEFR band decides it when none is worn -- the band is the one
+ * thing on the card the player has unambiguously earned by studying, which is what this app is
+ * for. Reusing [cefrStyle] for that fallback means the glow, the band badge and the level bar
+ * cannot drift into three different opinions about what B1 looks like.
+ *
+ * There is one `hero.png`, so a skin cannot change the sprite -- the glow is the whole of what it
+ * buys. Every code the shop sells therefore needs a colour here: a missing one falls through to
+ * the CEFR branch, and the player has paid gold for a character that looks exactly the same.
  */
 fun heroGlowFor(skinCode: String?, cefr: String): Color = when (skinCode?.uppercase()) {
     null, "" -> cefrStyle(cefr).color
+    "SKIN_ROOKIE" -> Neutral400
     "SKIN_SCHOLAR" -> Sky500
+    "SKIN_OFFICE" -> Color(0xFF1F9E86)
     "SKIN_NIGHT" -> Color(0xFF7C5CFF)
+    "SKIN_ORATOR" -> Color(0xFFE2568D)
+    "SKIN_LAUREATE" -> Orange400
     else -> cefrStyle(cefr).color
 }
 

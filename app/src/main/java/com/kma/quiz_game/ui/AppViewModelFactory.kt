@@ -12,6 +12,7 @@ import com.kma.quiz_game.ui.screens.duo.DuoResultViewModel
 import com.kma.quiz_game.ui.screens.game.ClassPickerViewModel
 import com.kma.quiz_game.ui.screens.game.InventoryViewModel
 import com.kma.quiz_game.ui.screens.game.LoadoutViewModel
+import com.kma.quiz_game.ui.screens.game.ShopViewModel
 import com.kma.quiz_game.ui.screens.game.SkillTreeViewModel
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardViewModel
 import com.kma.quiz_game.ui.screens.learn.LearnViewModel
@@ -59,6 +60,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
             LoadoutViewModel::class.java -> LoadoutViewModel(app.gameRepository) as T
 
             InventoryViewModel::class.java -> InventoryViewModel(app.gameRepository) as T
+
+            ShopViewModel::class.java -> ShopViewModel(app.gameRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

@@ -9,8 +9,10 @@ import com.kma.quiz_game.data.remote.dto.InventoryDto
 import com.kma.quiz_game.data.remote.dto.LoadoutDto
 import com.kma.quiz_game.data.remote.dto.LoadoutRequest
 import com.kma.quiz_game.data.remote.dto.SeasonDto
+import com.kma.quiz_game.data.remote.dto.ShopDto
 import com.kma.quiz_game.data.remote.dto.SkillNodeDto
 import com.kma.quiz_game.data.remote.dto.SkillTreeDto
+import com.kma.quiz_game.data.remote.dto.WearSkinRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -70,6 +72,22 @@ class GameRepository(private val gameApi: GameApi) {
         trinketId: String?,
     ): Result<InventoryDto> =
         runCatching { gameApi.setEquipment(EquipmentRequest(weaponId, armorId, trinketId)) }
+
+    /**
+     * Changes how this player's character is drawn, which the profile card reads from its own
+     * endpoint -- so that card is stale until it refetches, not something this can patch.
+     */
+    suspend fun wearSkin(skinCode: String?): Result<InventoryDto> =
+        runCatching { gameApi.wearSkin(WearSkinRequest(skinCode)) }
+
+    suspend fun shop(): Result<ShopDto> = runCatching { gameApi.getShop() }
+
+    /**
+     * Spends gold, so the cached profile is stale the moment this returns -- the lobby and the
+     * profile tab both draw the balance from it.
+     */
+    suspend fun purchaseItem(itemId: String): Result<ShopDto> =
+        runCatching { gameApi.purchaseItem(itemId) }.onSuccess { refreshProfile() }
 
     suspend fun currentSeason(): Result<SeasonDto> = runCatching { gameApi.getCurrentSeason() }
 

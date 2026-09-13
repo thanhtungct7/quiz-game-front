@@ -28,8 +28,8 @@ import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchDetailScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchScreen
 import com.kma.quiz_game.ui.screens.duo.DuoResultScreen
+import com.kma.quiz_game.ui.screens.game.CharacterHubScreen
 import com.kma.quiz_game.ui.screens.game.ClassPickerScreen
-import com.kma.quiz_game.ui.screens.game.InventoryScreen
 import com.kma.quiz_game.ui.screens.game.LoadoutScreen
 import com.kma.quiz_game.ui.screens.game.SkillTreeScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
@@ -140,7 +140,7 @@ fun DuoNavHost() {
                 MyProfileScreen(onLogout = { coroutineScope.launch { app.logout() } })
             }
             composable<Destination.Shop> {
-                InventoryScreen()
+                CharacterHubScreen()
             }
             composable<Destination.GameClass> {
                 ClassPickerScreen(onBack = { navController.popBackStack() })

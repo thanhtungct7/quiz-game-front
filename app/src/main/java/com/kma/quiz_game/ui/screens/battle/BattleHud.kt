@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kma.quiz_game.data.remote.dto.ChallengeOptionDto
 import com.kma.quiz_game.data.remote.dto.LoadoutSlotDto
+import com.kma.quiz_game.data.remote.dto.PVP_LIFELINE_EFFECTS
 import com.kma.quiz_game.ui.components.ChallengeOptionState
 import com.kma.quiz_game.ui.components.game.effectDescription
 import com.kma.quiz_game.ui.components.game.effectSymbol
@@ -175,6 +176,12 @@ fun BattleOptionCard(
  * Behaviour is deliberately identical to the shared dock: a tap always reaches the caller even
  * when the skill cannot be cast, because that tap is how a player asks why, and a long press
  * explains what the skill does.
+ *
+ * [isPvp] narrows what can actually be cast to the three "Trợ Lực Tri Thức" ([PVP_LIFELINE_EFFECTS])
+ * without hiding the other equipped skills -- a slot outside that set still shows, greyed with a
+ * lock, so a player who built a combat loadout for PvE sees where it went rather than a bar that
+ * mysteriously shrank. PvE (`BattleScreen`) leaves this at its default and keeps all eight effects
+ * castable, per `duo-game-back/android.md` §6.3.
  */
 @Composable
 fun BattleSkillDock(
@@ -184,10 +191,22 @@ fun BattleSkillDock(
     usedCodes: Set<String>,
     onCast: (LoadoutSlotDto) -> Unit,
     modifier: Modifier = Modifier,
+    isPvp: Boolean = false,
 ) {
     var explained by remember { mutableStateOf<LoadoutSlotDto?>(null) }
 
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+        if (isPvp && slots.isNotEmpty()) {
+            Text(
+                text = "Trợ Lực Tri Thức",
+                style = MaterialTheme.typography.labelMedium,
+                color = BattleTheme.ParchmentDim,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                textAlign = TextAlign.Center,
+            )
+        }
+
         if (slots.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -212,13 +231,15 @@ fun BattleSkillDock(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             slots.forEach { slot ->
-                val ready = canCast && slot.code !in usedCodes && mana >= slot.manaCost
+                val lifeline = !isPvp || slot.effect in PVP_LIFELINE_EFFECTS
+                val ready = lifeline && canCast && slot.code !in usedCodes && mana >= slot.manaCost
                 val spent = slot.code in usedCodes
                 BattleSkillSlot(
                     slot = slot,
                     ready = ready,
                     spent = spent,
-                    starved = !spent && canCast && mana < slot.manaCost,
+                    starved = lifeline && !spent && canCast && mana < slot.manaCost,
+                    blocked = !lifeline,
                     onClick = { onCast(slot) },
                     onLongClick = { explained = if (explained == slot) null else slot },
                     modifier = Modifier.weight(1f),
@@ -227,8 +248,13 @@ fun BattleSkillDock(
         }
 
         explained?.let { slot ->
+            val blocked = isPvp && slot.effect !in PVP_LIFELINE_EFFECTS
             Text(
-                text = "${slot.name}: ${effectDescription(slot.effect)}",
+                text = if (blocked) {
+                    "${slot.name}: chỉ dùng được khi luyện tập, không dùng được trong Đấu 1v1."
+                } else {
+                    "${slot.name}: ${effectDescription(slot.effect)}"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = BattleTheme.ParchmentDim,
                 textAlign = TextAlign.Center,
@@ -247,6 +273,7 @@ private fun BattleSkillSlot(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    blocked: Boolean = false,
 ) {
     val border by animateColorAsState(
         targetValue = if (ready) BattleTheme.Gold else BattleTheme.Edge,
@@ -265,7 +292,7 @@ private fun BattleSkillSlot(
                 onLongClick = onLongClick,
             )
             .padding(vertical = 8.dp, horizontal = 4.dp)
-            .alpha(if (ready) 1f else 0.55f),
+            .alpha(if (ready) 1f else if (blocked) 0.35f else 0.55f),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -277,7 +304,7 @@ private fun BattleSkillSlot(
                 .border(1.dp, if (ready) BattleTheme.EdgeLit else BattleTheme.Edge, RoundedCornerShape(50)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = effectSymbol(slot.effect), fontSize = 18.sp)
+            Text(text = if (blocked) "🔒" else effectSymbol(slot.effect), fontSize = 18.sp)
         }
         Spacer(Modifier.height(4.dp))
         Text(
@@ -289,9 +316,10 @@ private fun BattleSkillSlot(
             textAlign = TextAlign.Center,
         )
         Text(
-            text = if (spent) "đã dùng" else "${slot.manaCost} mana",
+            text = if (blocked) "chỉ PvE" else if (spent) "đã dùng" else "${slot.manaCost} mana",
             style = MaterialTheme.typography.labelSmall,
             color = when {
+                blocked -> BattleTheme.ParchmentFaint
                 spent -> BattleTheme.ParchmentFaint
                 starved -> BattleTheme.Blood
                 else -> BattleTheme.Mana

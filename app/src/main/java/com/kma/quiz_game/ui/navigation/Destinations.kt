@@ -38,11 +38,20 @@ sealed interface Destination {
     @Serializable
     data class DuoMatchDetail(val matchId: String) : Destination
 
-    /** Equipment lives behind the Shop tab: chests are where items come from, not a store. */
+    /**
+     * The Character Hub: wardrobe, shop and class behind one tab, three sub-tabs -- see
+     * `duo-game-back/android.md` §3B / §6.2. Kept named `Shop` rather than renamed to avoid
+     * touching every existing navigation call site for a route whose destination screen already
+     * changed to [com.kma.quiz_game.ui.screens.game.CharacterHubScreen].
+     */
     @Serializable
     data object Shop : Destination
 
-    /** The class picker. Full screen -- it is a comparison, and the bottom bar steals a row. */
+    /**
+     * Deep link into the class sub-tab from outside the hub (e.g. the Duo lobby). The picker's
+     * layout is the same compact row used inside the hub -- see §6.2 -- so this is a shortcut to
+     * that content, not a second design.
+     */
     @Serializable
     data object GameClass : Destination
 
@@ -100,6 +109,6 @@ val BOTTOM_NAV_ITEMS = listOf(
     BottomNavItem(Destination.Learn, "Learn", Icons.Filled.School, Icons.Outlined.School),
     BottomNavItem(Destination.Duo, "Duo", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports),
     BottomNavItem(Destination.Leaderboard, "Ranking", Icons.Filled.Leaderboard, Icons.Outlined.Leaderboard),
-    BottomNavItem(Destination.Shop, "Trang bị", Icons.Filled.Storefront, Icons.Outlined.Storefront),
+    BottomNavItem(Destination.Shop, "Nhân vật", Icons.Filled.Storefront, Icons.Outlined.Storefront),
     BottomNavItem(Destination.Profile, "Hồ sơ", Icons.Filled.Person, Icons.Outlined.Person),
 )

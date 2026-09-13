@@ -16,6 +16,24 @@ object BattleArt {
     const val MONSTER_PAGE = "battle/monsters.png"
     const val BACKDROP = "battle/backdrop.png"
 
+    /**
+     * The sheet to draw a player in, given the skin they are wearing.
+     *
+     * Every skin page is the default page with nine costume colours swapped, so they share this
+     * object's grid, frame count and clip timings exactly -- a skin can never desynchronise an
+     * animation. An unknown code falls back to the default rather than failing: a page that was
+     * retired server-side must not leave a player invisible.
+     */
+    fun heroPageFor(skinCode: String?): String = when (skinCode?.uppercase()) {
+        "SKIN_ROOKIE" -> "battle/hero_rookie.png"
+        "SKIN_SCHOLAR" -> "battle/hero_scholar.png"
+        "SKIN_OFFICE" -> "battle/hero_office.png"
+        "SKIN_NIGHT" -> "battle/hero_night.png"
+        "SKIN_ORATOR" -> "battle/hero_orator.png"
+        "SKIN_LAUREATE" -> "battle/hero_laureate.png"
+        else -> HERO_PAGE
+    }
+
     /** The hero page is a plain grid; every frame is cropped to the same box around the same feet. */
     const val HERO_COLUMNS = 8
     const val HERO_FRAME_WIDTH = 81

@@ -28,6 +28,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -97,6 +98,10 @@ fun MyProfileScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+
+    // Re-read on every visit: a skin put on in the Nhân vật tab is what colours the character
+    // below, and this view model survives the tab swap that would otherwise have reloaded it.
+    LaunchedEffect(Unit) { viewModel.load() }
 
     // The system photo picker: it hands back a single image without the app ever holding
     // READ_MEDIA_IMAGES, so there is no runtime permission to ask for.
@@ -387,7 +392,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.wardrobeTab(state: Pr
         SectionCard(title = "Trang phục") {
             when {
                 state.isLoadingInventory -> LoadingNote()
-                state.skins.isEmpty() -> EmptyNote("Chưa có trang phục nào. Rương sau trận đấu là nơi chúng rơi ra.")
+                state.skins.isEmpty() -> EmptyNote("Chưa có trang phục nào. Mua bằng Vàng ở tab Nhân vật.")
                 else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.skins.forEach { OwnedItemRow(it) }
                 }

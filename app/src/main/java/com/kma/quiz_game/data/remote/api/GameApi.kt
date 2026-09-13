@@ -8,8 +8,10 @@ import com.kma.quiz_game.data.remote.dto.InventoryDto
 import com.kma.quiz_game.data.remote.dto.LoadoutDto
 import com.kma.quiz_game.data.remote.dto.LoadoutRequest
 import com.kma.quiz_game.data.remote.dto.SeasonDto
+import com.kma.quiz_game.data.remote.dto.ShopDto
 import com.kma.quiz_game.data.remote.dto.SkillNodeDto
 import com.kma.quiz_game.data.remote.dto.SkillTreeDto
+import com.kma.quiz_game.data.remote.dto.WearSkinRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PUT
@@ -53,6 +55,17 @@ interface GameApi {
     /** All three slots at once -- a null id empties that slot. */
     @PUT("game/equipment")
     suspend fun setEquipment(@Body body: EquipmentRequest): InventoryDto
+
+    /** Puts an owned skin on show. A null code takes the current one off. */
+    @PUT("game/skin")
+    suspend fun wearSkin(@Body body: WearSkinRequest): InventoryDto
+
+    @GET("game/shop")
+    suspend fun getShop(): ShopDto
+
+    /** Bought once and kept. Buying the same item again is a 409, not a second charge. */
+    @POST("game/shop/{itemId}/purchase")
+    suspend fun purchaseItem(@Path("itemId") itemId: String): ShopDto
 
     @GET("game/season/current")
     suspend fun getCurrentSeason(): SeasonDto

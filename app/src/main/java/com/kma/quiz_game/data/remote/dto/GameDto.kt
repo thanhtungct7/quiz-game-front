@@ -141,7 +141,24 @@ object SkillEffect {
     const val MANA_BURN = "MANA_BURN"
     const val COMBO_KEEP = "COMBO_KEEP"
     const val EXECUTE = "EXECUTE"
+
+    /**
+     * Adds seconds to the time the caster's next correct answer is scored against, so reading a
+     * hard question carefully no longer costs the speed bonus.
+     *
+     * The name must stay exactly `TIME_BONUS`: these are wire values compared against the `effect`
+     * string a loadout slot arrives with, not an app-side vocabulary. Spelling it anything else
+     * makes [PVP_LIFELINE_EFFECTS] miss a real lifeline and the PvP dock lock it as "chỉ PvE".
+     */
+    const val TIME_BONUS = "TIME_BONUS"
 }
+
+/**
+ * The three "Trợ Lực Tri Thức" (knowledge lifelines) a duel allows: pedagogical help only, no
+ * combat effect. Everything else in [SkillEffect] stays available in PvE, where the RPG numbers
+ * are still real -- see `duo-game-back/android.md` §1.3 and §6.3 for why PvP is narrower.
+ */
+val PVP_LIFELINE_EFFECTS = setOf(SkillEffect.REMOVE_OPTIONS, SkillEffect.COMBO_KEEP, SkillEffect.TIME_BONUS)
 
 /** Three at a time, and only an equipped skill can be cast. */
 const val LOADOUT_SLOTS = 3
@@ -175,20 +192,57 @@ data class ItemDto(
     /** WEAPON / ARMOR / TRINKET, null for anything that is not equipment. */
     val slot: String? = null,
     val rarity: String = "",
-    val bonusMaxHp: Int = 0,
-    val bonusDamagePermille: Int = 0,
-    val bonusStartingMana: Int = 0,
+    /** Thousandths on the EXP a match or lesson pays out: 45 is +4.5%. */
+    val bonusExpPermille: Int = 0,
+    /** Thousandths on the Gold a match or lesson pays out. */
+    val bonusGoldPermille: Int = 0,
     val quantity: Int = 1,
     val equipped: Boolean = false,
 )
 
-/** The bonuses are already capped by the server, so this is exactly what a match will use. */
+/**
+ * Equipment no longer moves a combat number: what it buys is a percentage on top of what a match
+ * or lesson *pays*, never on the odds of winning it. The bonuses here are already capped by the
+ * server, so this is exactly what the next payout will use.
+ */
 @Serializable
 data class InventoryDto(
     val items: List<ItemDto> = emptyList(),
-    val bonusMaxHp: Int = 0,
-    val bonusDamagePermille: Int = 0,
-    val bonusStartingMana: Int = 0,
+    val bonusExpPermille: Int = 0,
+    val bonusGoldPermille: Int = 0,
+    /** The skin on show, or null for the CEFR band's own colour. See `heroGlowFor`. */
+    val skinCode: String? = null,
+)
+
+/** A null code takes the current skin off; it is not an omitted field. */
+@Serializable
+data class WearSkinRequest(
+    val skinCode: String? = null,
+)
+
+/**
+ * One row on the shop's shelf.
+ *
+ * No bonus fields, and that is the point rather than an omission: only zero-bonus cosmetics carry
+ * a price server-side, so gold can buy a look and never an edge. Equipment stays chest-only.
+ */
+@Serializable
+data class ShopItemDto(
+    val id: String,
+    val code: String,
+    val name: String,
+    /** Always SKIN today; kept so a future cosmetic kind needs no client change. */
+    val kind: String = "",
+    val rarity: String = "",
+    val goldPrice: Int = 0,
+    val owned: Boolean = false,
+)
+
+/** The shelf and the balance together, so a purchase's response leaves nothing stale to re-fetch. */
+@Serializable
+data class ShopDto(
+    val gold: Int = 0,
+    val items: List<ShopItemDto> = emptyList(),
 )
 
 @Serializable

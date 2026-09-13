@@ -48,15 +48,21 @@ import com.kma.quiz_game.ui.theme.ShapeXl
  *
  * The three classes are shown side by side rather than one at a time because the choice is
  * entirely a comparison -- more health against more damage against more opening mana -- and a
- * carousel would hide the very numbers being traded off.
+ * carousel would hide the very numbers being traded off. They sit in one row now (not stacked)
+ * so the same layout fits both the old full-screen deep link and the "Trường phái" sub-tab of
+ * the Character Hub (see `duo-game-back/android.md` §6.2) without two designs to maintain.
  *
  * The confirmation is not boilerplate. The first pick is free, but every later one costs gold
  * *and clears the equipped skills*, and losing a carefully built bar to a mistap is not something
  * an undo can fix.
+ *
+ * [onBack] is `null` when this is embedded in a tab rather than pushed as its own route: there is
+ * no back stack to pop, so the trailing "Xong" button -- which exists only to leave that route --
+ * is left out rather than wired to a no-op.
  */
 @Composable
 fun ClassPickerScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: ClassPickerViewModel = viewModel(factory = rememberAppViewModelFactory())
@@ -68,9 +74,9 @@ fun ClassPickerScreen(
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
     ) {
-        Text(text = "Lớp nhân vật", style = MaterialTheme.typography.headlineMedium)
+        Text(text = "Trường phái", style = MaterialTheme.typography.headlineMedium)
         Text(
-            text = "Lớp quyết định máu, sát thương và mana khởi đầu của bạn trong mọi trận đấu.",
+            text = "Trường phái quyết định máu, sát thương và mana khởi đầu của bạn trong mọi trận đấu.",
             style = MaterialTheme.typography.bodyLarge,
             color = Neutral500,
         )
@@ -80,17 +86,23 @@ fun ClassPickerScreen(
             Box(Modifier.fillMaxWidth().height(200.dp), Alignment.Center) { CircularProgressIndicator() }
         }
 
-        state.classes.forEach { gameClass ->
-            ClassCard(
-                gameClass = gameClass,
-                onClick = { viewModel.select(gameClass) },
-            )
-            Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            state.classes.forEach { gameClass ->
+                ClassCard(
+                    gameClass = gameClass,
+                    onClick = { viewModel.select(gameClass) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
 
         if (state.hasClass) {
+            Spacer(Modifier.height(16.dp))
             Text(
-                text = "Đổi lớp tốn $CLASS_CHANGE_COST vàng và xoá thanh kỹ năng đang trang bị. " +
+                text = "Đổi trường phái tốn $CLASS_CHANGE_COST vàng và xoá thanh kỹ năng đang trang bị. " +
                     "Kỹ năng đã mở khoá thì không mất.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Neutral500,
@@ -110,8 +122,10 @@ fun ClassPickerScreen(
             TextButton(onClick = viewModel::dismissError) { Text("Đã hiểu") }
         }
 
-        Spacer(Modifier.height(20.dp))
-        DuoButton(text = "Xong", onClick = onBack, variant = DuoButtonVariant.Outline)
+        if (onBack != null) {
+            Spacer(Modifier.height(20.dp))
+            DuoButton(text = "Xong", onClick = onBack, variant = DuoButtonVariant.Outline)
+        }
     }
 
     state.pending?.let { pending ->
@@ -132,7 +146,7 @@ fun ClassPickerScreen(
             confirmButton = {
                 TextButton(
                     enabled = state.canAfford && !state.isSaving,
-                    onClick = { viewModel.confirm(onBack) },
+                    onClick = { viewModel.confirm { onBack?.invoke() } },
                 ) { Text("Xác nhận") }
             },
             dismissButton = { TextButton(onClick = viewModel::dismissConfirm) { Text("Huỷ") } },
@@ -141,10 +155,9 @@ fun ClassPickerScreen(
 }
 
 @Composable
-private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit) {
+private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clip(ShapeXl)
             .background(Neutral050)
             .border(
@@ -153,34 +166,37 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit) {
                 shape = ShapeXl,
             )
             .clickable(enabled = !gameClass.isCurrent, onClick = onClick)
-            .padding(16.dp),
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        if (gameClass.isCurrent) {
             Text(
-                text = gameClass.name,
-                style = MaterialTheme.typography.titleLarge,
-                color = Neutral700,
+                text = "Đang dùng",
+                style = MaterialTheme.typography.labelSmall,
+                color = Green500,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
             )
-            if (gameClass.isCurrent) {
-                Text(
-                    text = "Đang dùng",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Green500,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            Spacer(Modifier.height(2.dp))
         }
         Text(
-            text = gameClass.description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Neutral500,
+            text = gameClass.name,
+            style = MaterialTheme.typography.titleMedium,
+            color = Neutral700,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(12.dp))
-        Row(
+        Text(
+            text = gameClass.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = Neutral500,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(10.dp))
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             StatCell("Máu", "${gameClass.maxHp}", Green500)
             // Thousandths on the wire, shown as the multiplier a player actually reasons about.
@@ -192,18 +208,20 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit) {
 
 @Composable
 private fun StatCell(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = color,
-            fontWeight = FontWeight.Bold,
-        )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = Neutral500,
-            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Bold,
         )
     }
 }

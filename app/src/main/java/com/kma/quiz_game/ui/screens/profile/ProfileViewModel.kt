@@ -153,9 +153,13 @@ class ProfileViewModel(
                 _uiState.update { it.copy(card = card) }
             }
         }
-        load()
     }
 
+    /**
+     * Called by the screen on entering composition rather than from `init`: this view model
+     * outlives its tab, and what the card draws can be changed from another one -- putting on a
+     * skin in Nhân vật is what lights the character's plinth here.
+     */
     fun load() {
         // Only a first, uncached load is worth a spinner; a revalidation should leave whatever
         // is already on screen alone.

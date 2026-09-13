@@ -27,8 +27,14 @@ data class InventoryUiState(
 
     fun equipped(slot: String): ItemDto? = forSlot(slot).firstOrNull { it.equipped }
 
-    /** Skins and cards carry no bonus at all, so they are listed apart from the three slots. */
-    val cosmetics: List<ItemDto> get() = items.filter { it.kind != ItemKind.EQUIPMENT }
+    /** Wearable: the only cosmetic that changes anything the player can see. */
+    val skins: List<ItemDto> get() = items.filter { it.kind == ItemKind.SKIN }
+
+    /** Collectible only -- a card has nowhere to be worn, so it is listed, not offered. */
+    val cards: List<ItemDto> get() = items.filter { it.kind == ItemKind.CARD }
+
+    fun isWorn(item: ItemDto): Boolean =
+        inventory?.skinCode != null && inventory.skinCode == item.code
 }
 
 /**
@@ -43,10 +49,12 @@ class InventoryViewModel(private val gameRepository: GameRepository) : ViewModel
     private val _uiState = MutableStateFlow(InventoryUiState())
     val uiState: StateFlow<InventoryUiState> = _uiState.asStateFlow()
 
-    init {
-        load()
-    }
-
+    /**
+     * Loaded by the screen on entering composition rather than here in `init`, because this view
+     * model outlives its tab: buying a skin in the neighbouring Cửa hàng tab changes what belongs
+     * in this list, and an `init`-only load would still be showing the collection as it stood
+     * before the purchase.
+     */
     fun load() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -76,6 +84,27 @@ class InventoryViewModel(private val gameRepository: GameRepository) : ViewModel
                 armorId = if (slot == EquipmentSlot.ARMOR) next else state.equipped(EquipmentSlot.ARMOR)?.id,
                 trinketId = if (slot == EquipmentSlot.TRINKET) next else state.equipped(EquipmentSlot.TRINKET)?.id,
             )
+                .onSuccess { inventory ->
+                    _uiState.update { it.copy(isSaving = false, inventory = inventory) }
+                }
+                .onFailure { cause ->
+                    _uiState.update { it.copy(isSaving = false, errorMessage = cause.toUserMessage()) }
+                }
+        }
+    }
+
+    /**
+     * Puts a skin on, or takes it off when it is the one already worn.
+     *
+     * Toggling rather than a separate "cởi ra" control: only one can be on at a time, so tapping
+     * the one you are wearing has no other sensible meaning.
+     */
+    fun toggleSkin(item: ItemDto) {
+        val next = if (_uiState.value.isWorn(item)) null else item.code
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            gameRepository.wearSkin(next)
                 .onSuccess { inventory ->
                     _uiState.update { it.copy(isSaving = false, inventory = inventory) }
                 }

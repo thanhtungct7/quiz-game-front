@@ -45,13 +45,15 @@ import kotlin.math.roundToInt
 @Composable
 fun HeroPortrait(
     modifier: Modifier = Modifier,
-    /** The lit half of "skin & glow". Until the character module ships a skin, the caller derives
-     * this from something the player has earned -- see [heroGlowFor]. */
+    /** The lit half of "skin & glow" -- see [heroGlowFor]. */
     glow: Color,
+    /** Which costume to draw him in. Null wears the default. */
+    skinCode: String? = null,
     animated: Boolean = true,
 ) {
     val context = LocalContext.current
-    val sheet = remember(context) { HeroSheet.load(context) }
+    val page = BattleArt.heroPageFor(skinCode)
+    val sheet = remember(context, page) { HeroSheet.load(context, page) }
     val frame = remember { mutableIntStateOf(HeroClip.IDLE.start) }
 
     if (animated) {
@@ -164,21 +166,22 @@ private fun DrawScope.drawSilhouette(glow: Color) {
  * time the profile tab is opened would put a file read on the frame that opens it.
  */
 private object HeroSheet {
-    @Volatile
-    private var cached: ImageBitmap? = null
+    // One entry per skin rather than one page: a leaderboard draws several players at once and
+    // they need not be wearing the same thing. There are seven pages in total, each a few KB.
+    private val cached = java.util.concurrent.ConcurrentHashMap<String, ImageBitmap>()
 
-    fun load(context: Context): ImageBitmap? {
-        cached?.let { return it }
+    fun load(context: Context, page: String): ImageBitmap? {
+        cached[page]?.let { return it }
         // A missing or unreadable asset is not worth a crash on a profile screen; the caller
         // falls back to a silhouette.
         val decoded = runCatching {
-            context.assets.open(BattleArt.HERO_PAGE).use { stream ->
+            context.assets.open(page).use { stream ->
                 // inScaled = false: the page is a pixel-art atlas, and letting the density
                 // machinery resample it would defeat the point of drawing it unfiltered.
                 BitmapFactory.decodeStream(stream, null, BitmapFactory.Options().apply { inScaled = false })
             }
         }.getOrNull() ?: return null
-        return decoded.asImageBitmap().also { cached = it }
+        return decoded.asImageBitmap().also { cached[page] = it }
     }
 }
 

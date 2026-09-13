@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.quiz_game.data.remote.dto.DuoErrorCode
 import com.kma.quiz_game.data.remote.dto.LoadoutSlotDto
+import com.kma.quiz_game.data.remote.dto.PVP_LIFELINE_EFFECTS
 import com.kma.quiz_game.data.repository.DuoPhase
 import com.kma.quiz_game.data.repository.DuoRepository
 import com.kma.quiz_game.data.repository.DuoSession
@@ -202,6 +203,14 @@ class DuoMatchViewModel(
         val serverNow = session.serverNowMs(SystemClock.elapsedRealtime())
         lastCastCode = slot.code
 
+        // Combat skills built for PvE are never sent here at all: a duel is pedagogical only
+        // (see duo-game-back/android.md §6.3), and the dock already shows the slot locked, but a
+        // tap is still how a player asks "why not" -- so it gets a local flash, no server round trip.
+        if (slot.effect !in PVP_LIFELINE_EFFECTS) {
+            flashRejection(slot.code, "Kỹ năng này chỉ dùng được khi luyện tập, không dùng được trong Đấu 1v1.")
+            return
+        }
+
         val refusal = when {
             serverNow < session.stunnedUntil -> DuoErrorCode.STUNNED
             session.phase != DuoPhase.FIGHTING -> DuoErrorCode.NOT_IN_MATCH
@@ -216,12 +225,14 @@ class DuoMatchViewModel(
         duoRepository.useSkill(slot.code)
     }
 
-    private fun nudge(code: String?, error: DuoErrorCode) {
+    private fun nudge(code: String?, error: DuoErrorCode) = flashRejection(code, error.nudgeText())
+
+    private fun flashRejection(code: String?, message: String) {
         local.update {
             it.copy(
                 rejectedSkillCode = code,
                 rejectedSeq = it.rejectedSeq + 1,
-                castNudge = error.nudgeText(),
+                castNudge = message,
             )
         }
     }

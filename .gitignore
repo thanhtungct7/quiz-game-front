@@ -14,3 +14,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Bản tải đầy đủ của pack icon: chỉ các file thực dùng được chép vào assets/items.
+# Xem ASSETS.md -- giấy phép cấm phát tán lại.
+pixel-art/
+Pixel Art Icon Pack - RPG.zip
