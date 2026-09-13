@@ -552,6 +552,9 @@ data class ErrorDto(
 /** Stable error codes from `app/schemas/duo/events.py`, plus a client-side catch-all. */
 enum class DuoErrorCode {
     INVALID_PAYLOAD,
+
+    /** Frames arrived faster than a person could send them; the server dropped the extra ones. */
+    RATE_LIMITED,
     UNKNOWN_EVENT,
     ALREADY_IN_MATCH,
     ALREADY_IN_QUEUE,

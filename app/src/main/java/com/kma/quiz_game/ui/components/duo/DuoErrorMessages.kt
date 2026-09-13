@@ -16,6 +16,7 @@ import com.kma.quiz_game.data.remote.dto.DuoErrorCode
 fun DuoErrorCode.toUserMessage(): String = when (this) {
     DuoErrorCode.INVALID_PAYLOAD -> "Dữ liệu gửi lên không hợp lệ."
     DuoErrorCode.UNKNOWN_EVENT -> "Máy chủ không hiểu yêu cầu này."
+    DuoErrorCode.RATE_LIMITED -> "Bạn thao tác quá nhanh, chậm lại một chút nhé."
     DuoErrorCode.ALREADY_IN_MATCH -> "Bạn đang ở trong một trận khác."
     DuoErrorCode.ALREADY_IN_QUEUE -> "Bạn đã ở trong hàng chờ rồi."
     DuoErrorCode.NOT_IN_QUEUE -> "Bạn không ở trong hàng chờ."

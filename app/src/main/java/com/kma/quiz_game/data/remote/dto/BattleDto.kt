@@ -337,6 +337,9 @@ data class BattleErrorDto(
 /** Stable error codes from `app/schemas/pve/events.py`, plus a client-side catch-all. */
 enum class BattleErrorCode {
     INVALID_PAYLOAD,
+
+    /** Frames arrived faster than a person could send them; the server dropped the extra ones. */
+    RATE_LIMITED,
     UNKNOWN_EVENT,
     BATTLE_ALREADY_ACTIVE,
     LESSON_NOT_FOUND,
