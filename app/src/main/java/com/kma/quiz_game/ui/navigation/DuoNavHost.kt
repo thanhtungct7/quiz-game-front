@@ -23,6 +23,7 @@ import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.ui.screens.battle.BattleResultScreen
 import com.kma.quiz_game.ui.screens.battle.BattleScreen
+import com.kma.quiz_game.ui.screens.benchmark.BenchmarkExamScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHistoryScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchDetailScreen
@@ -91,6 +92,9 @@ fun DuoNavHost() {
                     // A gate on the path is a monster now. The plain lesson screen stays wired
                     // below as the way back if the battle route ever has to be switched off.
                     onLessonClick = { lessonId -> navController.navigate(Destination.Battle(lessonId)) },
+                    onStartBenchmark = { capLevel ->
+                        navController.navigate(Destination.BenchmarkExam(capLevel))
+                    },
                 )
             }
             composable<Destination.Leaderboard> {
@@ -161,6 +165,15 @@ fun DuoNavHost() {
                 val lesson = entry.toRoute<Destination.Lesson>()
                 LessonScreen(
                     lessonId = lesson.lessonId,
+                    onExit = { navController.popBackStack() },
+                )
+            }
+            composable<Destination.BenchmarkExam> { entry ->
+                val route = entry.toRoute<Destination.BenchmarkExam>()
+                BenchmarkExamScreen(
+                    capLevel = route.capLevel,
+                    // Back to the path either way. A pass has already updated the cached game
+                    // profile, so the banner it came from is gone by the time it redraws.
                     onExit = { navController.popBackStack() },
                 )
             }

@@ -1,5 +1,10 @@
 package com.kma.quiz_game.data.remote.api
 
+import com.kma.quiz_game.data.remote.dto.BenchmarkAnswerAckDto
+import com.kma.quiz_game.data.remote.dto.BenchmarkAnswerRequest
+import com.kma.quiz_game.data.remote.dto.BenchmarkAttemptDto
+import com.kma.quiz_game.data.remote.dto.BenchmarkAttemptStartRequest
+import com.kma.quiz_game.data.remote.dto.BenchmarkResultDto
 import com.kma.quiz_game.data.remote.dto.ChooseClassRequest
 import com.kma.quiz_game.data.remote.dto.EquipmentRequest
 import com.kma.quiz_game.data.remote.dto.GameClassDto
@@ -28,6 +33,26 @@ import retrofit2.http.Path
 interface GameApi {
     @GET("game/profile")
     suspend fun getProfile(): GameProfileDto
+
+    /**
+     * Open a sitting of the Benchmark Exam for one cap, on a paper the server draws.
+     *
+     * 400 for a cap the raw level has not reached, 409 for one already cleared or when the course
+     * holds too little content to draw from.
+     */
+    @POST("game/benchmark-exam/attempts")
+    suspend fun startBenchmarkAttempt(@Body body: BenchmarkAttemptStartRequest): BenchmarkAttemptDto
+
+    /** One answer. 409 once the sitting has closed or the question was already answered. */
+    @POST("game/benchmark-exam/attempts/{attemptId}/answers")
+    suspend fun answerBenchmarkQuestion(
+        @Path("attemptId") attemptId: String,
+        @Body body: BenchmarkAnswerRequest,
+    ): BenchmarkAnswerAckDto
+
+    /** Hand the paper in and get the grade. Safe to retry: a graded sitting is never regraded. */
+    @POST("game/benchmark-exam/attempts/{attemptId}/submit")
+    suspend fun submitBenchmarkAttempt(@Path("attemptId") attemptId: String): BenchmarkResultDto
 
     @GET("game/classes")
     suspend fun listClasses(): List<GameClassDto>

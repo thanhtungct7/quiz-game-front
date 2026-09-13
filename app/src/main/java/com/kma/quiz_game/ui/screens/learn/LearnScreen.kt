@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,11 +34,13 @@ import com.kma.quiz_game.ui.components.LessonNodeStatus
 import com.kma.quiz_game.ui.components.LessonPath
 import com.kma.quiz_game.ui.components.PracticeDialog
 import com.kma.quiz_game.ui.components.UserProgressBar
+import com.kma.quiz_game.ui.screens.benchmark.BenchmarkExam
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 
 @Composable
 fun LearnScreen(
     onLessonClick: (String) -> Unit,
+    onStartBenchmark: (Int) -> Unit,
     factory: AppViewModelFactory = rememberAppViewModelFactory(),
     viewModel: LearnViewModel = viewModel(factory = factory),
 ) {
@@ -78,6 +82,18 @@ fun LearnScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
+            // Above the path rather than beside the level chip: a capped learner keeps earning
+            // experience that stops turning into levels, and the banner is the only thing on the
+            // whole screen that explains why.
+            uiState.pendingBenchmarkLevel?.let { capLevel ->
+                item(key = "benchmark-$capLevel") {
+                    BenchmarkBanner(
+                        capLevel = capLevel,
+                        onStart = { onStartBenchmark(capLevel) },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+            }
             items(uiState.units) { unit ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     UnitBanner(title = unit.title, description = unit.description)
@@ -109,6 +125,41 @@ fun LearnScreen(
                 onLessonClick(lessonId)
             },
         )
+    }
+}
+
+/**
+ * The Benchmark Exam prompt: shown exactly while a cap is holding the level back.
+ *
+ * Names the band on offer rather than the cap number -- "bậc B1" is what the learner is working
+ * towards, while "level 25" is the implementation detail that happens to gate it.
+ */
+@Composable
+private fun BenchmarkBanner(capLevel: Int, onStart: () -> Unit, modifier: Modifier = Modifier) {
+    val band = BenchmarkExam.bandUnlockedBy(capLevel)
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = band?.let { "Đã tới mốc bậc $it" } ?: "Đã tới mốc năng lực",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = "Cấp độ đang dừng ở $capLevel. Kinh nghiệm vẫn được cộng, nhưng cần vượt " +
+                    "bài thi sát hạch (${BenchmarkExam.QUESTION_COUNT} câu, đúng " +
+                    "${BenchmarkExam.PASS_PERCENT}%) mới lên cấp tiếp được.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            DuoButton(text = "Vào thi", onClick = onStart)
+        }
     }
 }
 

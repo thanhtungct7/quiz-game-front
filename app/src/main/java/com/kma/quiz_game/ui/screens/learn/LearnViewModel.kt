@@ -10,6 +10,7 @@ import com.kma.quiz_game.data.remote.toUserMessage
 import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.BattleRepository
 import com.kma.quiz_game.data.repository.CourseTree
+import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
 import com.kma.quiz_game.data.repository.UserProgressRepository
@@ -33,6 +34,7 @@ class LearnViewModel(
     private val authRepository: AuthRepository,
     private val battleRepository: BattleRepository,
     private val profileRepository: ProfileRepository,
+    private val gameRepository: GameRepository,
 ) : ViewModel() {
 
     /** Cache-first: whatever was stored on the last run is on screen before any request goes out. */
@@ -57,15 +59,27 @@ class LearnViewModel(
         courseTree?.let { toUnitUi(it, progress, monsters) }.orEmpty() to (courseTree != null)
     }
 
+    /**
+     * The two standings the header strip reads, folded together for the same budget reason.
+     *
+     * They are separate endpoints and neither subsumes the other: the aggregated card carries the
+     * level and CEFR band on show, while the game profile is the only thing that knows whether
+     * that level is being *held* at a cap.
+     */
+    private val standing = combine(
+        profileRepository.selfProfile,
+        gameRepository.profile,
+    ) { card, game -> card to game }
+
     val uiState: StateFlow<LearnUiState> = combine(
         path,
         userProgress,
         isSyncing,
         errorMessage,
-        // The header strip's level and band. Shared with the profile tab through the repository,
+        // The header strip's level and band. Shared with the profile tab through the repositories,
         // so a level gained mid-session shows up here without this screen asking again.
-        profileRepository.selfProfile,
-    ) { (units, hasTree), gamification, syncing, error, card ->
+        standing,
+    ) { (units, hasTree), gamification, syncing, error, (card, game) ->
         LearnUiState(
             isLoading = !hasTree && syncing,
             isSyncing = syncing,
@@ -76,6 +90,7 @@ class LearnViewModel(
             level = card?.level,
             cefr = card?.cefr.orEmpty(),
             dayStreak = card?.dayStreak ?: 0,
+            pendingBenchmarkLevel = game?.pendingBenchmarkLevel,
             errorMessage = error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LearnUiState())
@@ -98,6 +113,9 @@ class LearnViewModel(
             isSyncing.value = true
             // Best effort, like the monster map below: the path draws fine without a level chip.
             profileRepository.refreshSelfProfile()
+            // The only source of `pendingBenchmarkLevel`, and it changes the moment an exam is
+            // passed -- so the banner clears on the way back from one without a manual reload.
+            gameRepository.refreshProfile()
             val result = learnRepository.refreshTree()
             errorMessage.value = result.exceptionOrNull()?.toUserMessage()
             // Even a failed refresh leaves the cached tree, which still names the course.

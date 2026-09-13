@@ -82,6 +82,17 @@ sealed interface Destination {
     @Serializable
     data class BattleResult(val lessonId: String) : Destination
 
+    /**
+     * The Bài Thi Sát Hạch for one chốt chặn năng lực -- see `duo-game-back/android.md` §1.6.
+     * Full screen: it is an exam, and a bottom bar offering four ways out of it is not.
+     *
+     * [capLevel] is the cap being sat for (10, 25, 50, 75 or 92), carried on the route rather
+     * than re-derived so the screen cannot end up reporting a pass against a different one than
+     * the banner offered.
+     */
+    @Serializable
+    data class BenchmarkExam(val capLevel: Int) : Destination
+
     @Serializable
     data object Login : Destination
 

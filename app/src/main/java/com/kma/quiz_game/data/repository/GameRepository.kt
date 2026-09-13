@@ -1,6 +1,11 @@
 package com.kma.quiz_game.data.repository
 
 import com.kma.quiz_game.data.remote.api.GameApi
+import com.kma.quiz_game.data.remote.dto.BenchmarkAnswerAckDto
+import com.kma.quiz_game.data.remote.dto.BenchmarkAnswerRequest
+import com.kma.quiz_game.data.remote.dto.BenchmarkAttemptDto
+import com.kma.quiz_game.data.remote.dto.BenchmarkAttemptStartRequest
+import com.kma.quiz_game.data.remote.dto.BenchmarkResultDto
 import com.kma.quiz_game.data.remote.dto.ChooseClassRequest
 import com.kma.quiz_game.data.remote.dto.EquipmentRequest
 import com.kma.quiz_game.data.remote.dto.GameClassDto
@@ -44,6 +49,34 @@ class GameRepository(private val gameApi: GameApi) {
 
     suspend fun refreshLoadout(): Result<LoadoutDto> =
         runCatching { gameApi.getLoadout() }.onSuccess { _loadout.value = it }
+
+    suspend fun startBenchmark(capLevel: Int): Result<BenchmarkAttemptDto> =
+        runCatching { gameApi.startBenchmarkAttempt(BenchmarkAttemptStartRequest(capLevel)) }
+
+    suspend fun answerBenchmark(
+        attemptId: String,
+        challengeId: String,
+        selectedOptionId: String?,
+        selectedOptionIds: List<String>?,
+    ): Result<BenchmarkAnswerAckDto> =
+        runCatching {
+            gameApi.answerBenchmarkQuestion(
+                attemptId,
+                BenchmarkAnswerRequest(challengeId, selectedOptionId, selectedOptionIds),
+            )
+        }
+
+    /**
+     * Hand a paper in.
+     *
+     * The response carries the profile as it stands after grading, so it replaces the cached one
+     * outright: on a pass the level it carries is the one that was being held back, and every
+     * screen reading [profile] -- the path header, the profile tab -- is showing the capped number
+     * until this lands.
+     */
+    suspend fun submitBenchmark(attemptId: String): Result<BenchmarkResultDto> =
+        runCatching { gameApi.submitBenchmarkAttempt(attemptId) }
+            .onSuccess { _profile.value = it.profile }
 
     suspend fun classes(): Result<List<GameClassDto>> = runCatching { gameApi.listClasses() }
 

@@ -47,6 +47,15 @@ data class GameProfileDto(
     val energy: EnergyDto,
     val dayStreak: Int,
     val bestDayStreak: Int,
+    /**
+     * The chốt chặn năng lực [level] is being held at, or null when nothing is holding it.
+     *
+     * Experience keeps accruing past a cap but the *level* does not, so a learner who is capped
+     * and never told would watch their bar fill and their level sit still with no explanation.
+     * Non-null is exactly the condition for offering the Benchmark Exam -- see
+     * `duo-game-back/app/schemas/game/game.py`, which says the same thing from the other side.
+     */
+    val pendingBenchmarkLevel: Int? = null,
 ) {
     /** How far through the current level the player is, for the bar under their name. */
     val levelFraction: Float
@@ -72,6 +81,62 @@ data class GameClassDto(
 
 @Serializable
 data class ChooseClassRequest(val classCode: String)
+
+// --- Benchmark Exam ---------------------------------------------------------
+
+/**
+ * Sit the Benchmark Exam bound to one cap. The server draws the paper and grades it; nothing the
+ * client counts is ever trusted.
+ */
+@Serializable
+data class BenchmarkAttemptStartRequest(val capLevel: Int)
+
+/**
+ * A freshly drawn paper. [questions] carry no answers. [startedAt] and [expiresAt] are server
+ * instants; the client only ever uses the *gap* between them, so a device clock that is off does not
+ * move the deadline.
+ */
+@Serializable
+data class BenchmarkAttemptDto(
+    val attemptId: String,
+    val capLevel: Int,
+    val questions: List<ChallengeDto>,
+    val total: Int,
+    val passPercent: Int,
+    val startedAt: String,
+    val expiresAt: String,
+)
+
+/** One answer. Exactly one of the two option fields is set, as with [AnswerCheckRequest]. */
+@Serializable
+data class BenchmarkAnswerRequest(
+    val challengeId: String,
+    val selectedOptionId: String? = null,
+    val selectedOptionIds: List<String>? = null,
+)
+
+/** That an answer was taken -- deliberately without saying whether it was right. */
+@Serializable
+data class BenchmarkAnswerAckDto(
+    val attemptId: String,
+    val answeredCount: Int,
+    val total: Int,
+)
+
+/** The grade, and the profile after it: a pass arrives with the cap already lifted. */
+@Serializable
+data class BenchmarkResultDto(
+    val attemptId: String,
+    val capLevel: Int,
+    val status: String,
+    val correctCount: Int,
+    val total: Int,
+    val percent: Int,
+    val passPercent: Int,
+    val passed: Boolean,
+    val submittedAt: String? = null,
+    val profile: GameProfileDto,
+)
 
 // --- Skills ---------------------------------------------------------------
 

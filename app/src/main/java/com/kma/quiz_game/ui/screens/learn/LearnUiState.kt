@@ -24,5 +24,11 @@ data class LearnUiState(
     val level: Int? = null,
     val cefr: String = "",
     val dayStreak: Int = 0,
+    /**
+     * The chốt chặn năng lực holding [level] back, or null when nothing is. Non-null is what puts
+     * the Benchmark Exam banner above the path -- without it a capped learner sees their
+     * experience bar fill and their level never move, with nothing on screen saying why.
+     */
+    val pendingBenchmarkLevel: Int? = null,
     val errorMessage: String? = null,
 )
