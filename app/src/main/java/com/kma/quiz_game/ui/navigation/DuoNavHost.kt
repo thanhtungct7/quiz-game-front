@@ -7,6 +7,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -21,6 +22,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.data.push.PushRoute
+import com.kma.quiz_game.ui.components.NotificationPermissionRequest
 import com.kma.quiz_game.ui.screens.battle.BattleResultScreen
 import com.kma.quiz_game.ui.screens.battle.BattleScreen
 import com.kma.quiz_game.ui.screens.benchmark.BenchmarkExamScreen
@@ -38,8 +41,14 @@ import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.profile.MyProfileScreen
 import kotlinx.coroutines.launch
 
+/**
+ * The signed-in app.
+ *
+ * [pushRoute] is where a tapped push notification asked to go, followed once and then reported
+ * back through [onPushRouteConsumed] so it is not followed again on recomposition.
+ */
 @Composable
-fun DuoNavHost() {
+fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {}) {
     val app = LocalContext.current.applicationContext as DuoGameApplication
     val coroutineScope = rememberCoroutineScope()
     val navController = rememberNavController()
@@ -48,6 +57,11 @@ fun DuoNavHost() {
     val showBottomBar = BOTTOM_NAV_ITEMS.any { item ->
         currentDestination?.hierarchy?.any { it.hasRoute(item.destination::class) } == true
     }
+
+    // Signed in from here on: tell the server where to reach this install, and ask -- once --
+    // whether it may. Both are best effort; the app works the same without push.
+    LaunchedEffect(Unit) { app.pushRepository.syncToken() }
+    NotificationPermissionRequest(pushRepository = app.pushRepository)
 
     Scaffold(
         bottomBar = {
@@ -59,15 +73,7 @@ fun DuoNavHost() {
                         } == true
                         NavigationBarItem(
                             selected = selected,
-                            onClick = {
-                                navController.navigate(item.destination) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { navController.navigateToTab(item.destination) },
                             icon = {
                                 Icon(
                                     imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
@@ -192,6 +198,30 @@ fun DuoNavHost() {
                 )
             }
         }
+
+        // After NavHost in the same content, so its graph is in place by the time this runs.
+        // Opened like a bottom-bar tap: the tab the push names, with the back stack of the others
+        // saved rather than dropped.
+        LaunchedEffect(pushRoute) {
+            val route = pushRoute ?: return@LaunchedEffect
+            navController.navigateToTab(route.destination())
+            onPushRouteConsumed()
+        }
+    }
+}
+
+private fun PushRoute.destination(): Destination = when (this) {
+    PushRoute.LEARN -> Destination.Learn
+    PushRoute.LEADERBOARD -> Destination.Leaderboard
+}
+
+private fun NavController.navigateToTab(destination: Destination) {
+    navigate(destination) {
+        popUpTo(graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
     }
 }
 

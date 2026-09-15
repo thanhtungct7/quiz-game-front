@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Asked for at runtime on first sign-in: minSdk is 33, where posting needs the grant. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".DuoGameApplication"
@@ -15,6 +17,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Quiz_game">
+
+        <!-- How FCM draws a push that arrives while the app is in the background. A push in the
+             foreground is drawn by DuoMessagingService instead. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="streak" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -40,6 +52,14 @@
                     android:scheme="quizgame" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".data.push.DuoMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

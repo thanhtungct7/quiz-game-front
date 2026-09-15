@@ -2,6 +2,8 @@ package com.kma.quiz_game
 
 import android.app.Application
 import com.kma.quiz_game.data.local.AppDatabase
+import com.kma.quiz_game.data.push.NotificationChannels
+import com.kma.quiz_game.data.push.PushRepository
 import com.kma.quiz_game.data.remote.BattleSocket
 import com.kma.quiz_game.data.remote.DuoSocket
 import com.kma.quiz_game.data.remote.FreshTokenProvider
@@ -12,6 +14,7 @@ import com.kma.quiz_game.data.remote.api.BattleApi
 import com.kma.quiz_game.data.remote.api.ContentApi
 import com.kma.quiz_game.data.remote.api.DuoApi
 import com.kma.quiz_game.data.remote.api.GameApi
+import com.kma.quiz_game.data.remote.api.NotificationsApi
 import com.kma.quiz_game.data.remote.api.ProfileApi
 import com.kma.quiz_game.data.remote.api.ProgressApi
 import com.kma.quiz_game.data.remote.api.UsersApi
@@ -21,8 +24,14 @@ import com.kma.quiz_game.data.repository.DuoRepository
 import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class DuoGameApplication : Application() {
+
+    /** Outlives every screen: a rotated FCM token has to reach the server with no UI up at all. */
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
     private val tokenStore: TokenStore by lazy { TokenStore(this) }
@@ -90,11 +99,31 @@ class DuoGameApplication : Application() {
 
     val battleRepository: BattleRepository by lazy { BattleRepository(battleApi, battleSocket) }
 
+    private val notificationsApi: NotificationsApi by lazy {
+        authenticatedRetrofit.create(NotificationsApi::class.java)
+    }
+
+    val pushRepository: PushRepository by lazy {
+        PushRepository(this, notificationsApi, authRepository)
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        // Before any push can arrive: a notification posted to a channel that does not exist yet
+        // is dropped.
+        NotificationChannels.createAll(this)
+    }
+
     /**
-     * Logging out revokes the refresh token, so the socket has to go first -- otherwise it keeps a
-     * connection open on credentials the server has just thrown away, and reconnects on them.
+     * The push token is handed back first, while the session can still authenticate the call --
+     * otherwise this install keeps receiving the signed-out account's reminders.
+     *
+     * Logging out revokes the refresh token, so the socket has to go before that too -- otherwise
+     * it keeps a connection open on credentials the server has just thrown away, and reconnects
+     * on them.
      */
     suspend fun logout() {
+        pushRepository.unregister()
         duoRepository.disconnect()
         battleRepository.disconnect()
         authRepository.logout()

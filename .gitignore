@@ -19,3 +19,6 @@ local.properties
 # Xem ASSETS.md -- giấy phép cấm phát tán lại.
 pixel-art/
 Pixel Art Icon Pack - RPG.zip
+
+# Firebase config, per developer
+app/google-services.json

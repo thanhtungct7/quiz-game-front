@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.data.push.PushRoute
 
 /**
  * Top-level switch between the auth graph and the main app graph, driven by whether a session
@@ -21,11 +22,19 @@ import com.kma.quiz_game.DuoGameApplication
  * graph open while the session is being torn down (MainActivity signs out on such a link), so the
  * reset screen never flashes past on the way to the lobby.
  *
+ * [pushRoute] is where a tapped push notification asked to go. Only the main graph can follow it,
+ * so a signed-out learner keeps it pending and lands there once they sign in.
+ *
  * [AuthNavHost] is called from a single place on purpose: two call sites would be two composables
  * to Compose, and moving between them would rebuild the nav graph and lose its state.
  */
 @Composable
-fun RootNavHost(resetToken: String? = null, onResetTokenConsumed: () -> Unit = {}) {
+fun RootNavHost(
+    resetToken: String? = null,
+    onResetTokenConsumed: () -> Unit = {},
+    pushRoute: PushRoute? = null,
+    onPushRouteConsumed: () -> Unit = {},
+) {
     val app = LocalContext.current.applicationContext as DuoGameApplication
     val isLoggedIn by app.authRepository.isLoggedIn.collectAsState(initial = null)
 
@@ -33,7 +42,7 @@ fun RootNavHost(resetToken: String? = null, onResetTokenConsumed: () -> Unit = {
         isLoggedIn == null && resetToken == null -> SplashScreen()
         isLoggedIn == false || resetToken != null ->
             AuthNavHost(resetToken = resetToken, onResetTokenConsumed = onResetTokenConsumed)
-        else -> DuoNavHost()
+        else -> DuoNavHost(pushRoute = pushRoute, onPushRouteConsumed = onPushRouteConsumed)
     }
 }
 

@@ -5,6 +5,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Firebase reads its project config from google-services.json, downloaded from the Firebase
+// console into this directory. Without the file the app still builds and runs, with push
+// notifications switched off -- see PushRepository.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // --- libGDX native libraries -------------------------------------------------
 //
 // The `gdx-platform` natives artifacts are plain jars holding a bare `libgdx.so`, with the ABI
@@ -110,6 +117,8 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.google.play.services.auth)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.fragment.ktx)
