@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
  * what gold can still add to it -- which is the other reason they belong behind one row of tabs.
  */
 @Composable
-fun CharacterHubScreen(modifier: Modifier = Modifier) {
+fun CharacterHubScreen(onPlayDuo: () -> Unit, modifier: Modifier = Modifier) {
     var selectedTab by remember { mutableStateOf(CharacterHubTab.WARDROBE) }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -42,7 +42,7 @@ fun CharacterHubScreen(modifier: Modifier = Modifier) {
         )
 
         when (selectedTab) {
-            CharacterHubTab.WARDROBE -> InventoryScreen(modifier = Modifier.weight(1f))
+            CharacterHubTab.WARDROBE -> InventoryScreen(onPlayDuo = onPlayDuo, modifier = Modifier.weight(1f))
             CharacterHubTab.CLASS -> ClassPickerScreen(onBack = null, modifier = Modifier.weight(1f))
             CharacterHubTab.SHOP -> ShopScreen(modifier = Modifier.weight(1f))
         }

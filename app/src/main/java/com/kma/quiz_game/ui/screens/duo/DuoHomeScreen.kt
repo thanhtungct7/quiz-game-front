@@ -564,7 +564,8 @@ private fun PlayerCard(state: DuoHomeUiState) {
             }
             state.season?.let { season ->
                 Text(
-                    text = "Mùa ${season.name}: ${season.rating} điểm" +
+                    // The server already names a season "Mùa 09/2026".
+                    text = "${season.name}: ${season.rating} điểm" +
                         (season.ratingToNextTier?.let { " · còn $it lên hạng" } ?: ""),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Neutral500,

@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kma.quiz_game.ui.components.profile.CefrBadge
+import com.kma.quiz_game.ui.theme.Green600
 import com.kma.quiz_game.ui.theme.Orange400
-import com.kma.quiz_game.ui.theme.Indigo500
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
 import com.kma.quiz_game.ui.theme.Sky500
 
@@ -52,7 +52,8 @@ fun UserProgressBar(
             CefrBadge(cefr = cefr, compact = true)
         }
         if (level != null) {
-            LabelledStat(symbol = "Lv", value = "$level", tint = Sky500)
+            // Green rather than blue: blue is energy, here and on the duo lobby.
+            LabelledStat(symbol = "Lv", value = "$level", tint = Green600)
         }
         // A zero streak is not worth a chip: it is the state of every account that has not
         // studied today, and drawing it makes the strip busier without saying anything.
@@ -83,7 +84,7 @@ private fun LabelledStat(symbol: String, value: String, tint: Color) {
 /** Current over maximum: queueing a duo match spends one, finishing a lesson refills. */
 @Composable
 private fun EnergyChip(energy: EnergyDto) {
-    LabelledStat(symbol = "⚡", value = "${energy.current}/${energy.maximum}", tint = Indigo500)
+    LabelledStat(symbol = "⚡", value = "${energy.current}/${energy.maximum}", tint = Sky500)
 }
 
 @Preview(showBackground = true)

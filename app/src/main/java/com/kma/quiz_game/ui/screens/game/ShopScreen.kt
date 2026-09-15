@@ -127,7 +127,7 @@ fun ShopScreen(modifier: Modifier = Modifier) {
                 color = Neutral500,
             )
             Spacer(Modifier.height(12.dp))
-            DuoButton(text = "Tải lại", onClick = viewModel::load)
+            DuoButton(text = "Tải lại", onClick = viewModel::load, variant = DuoButtonVariant.Outline)
         }
     }
 }

@@ -18,13 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.ui.components.DuoButton
+import com.kma.quiz_game.ui.components.PasswordField
 import com.kma.quiz_game.ui.theme.Rose500
 
 @Composable
@@ -62,13 +62,10 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
+        PasswordField(
             value = uiState.password,
             onValueChange = viewModel::onPasswordChange,
-            label = { Text("Mật khẩu (tối thiểu 8 ký tự)") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            label = "Mật khẩu (tối thiểu 8 ký tự)",
             modifier = Modifier.fillMaxWidth(),
         )
 

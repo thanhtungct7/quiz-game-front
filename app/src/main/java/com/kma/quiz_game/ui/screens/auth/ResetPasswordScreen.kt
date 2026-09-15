@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -18,8 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +24,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.ui.components.DuoButton
+import com.kma.quiz_game.ui.components.PasswordField
 import com.kma.quiz_game.ui.theme.Rose500
 
 /**
@@ -85,28 +83,22 @@ fun ResetPasswordScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        OutlinedTextField(
+        PasswordField(
             value = uiState.password,
             onValueChange = viewModel::onPasswordChange,
-            label = { Text("Mật khẩu mới") },
+            label = "Mật khẩu mới",
             supportingText = { Text("Ít nhất 8 ký tự") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
+        PasswordField(
             value = uiState.confirmPassword,
             onValueChange = viewModel::onConfirmPasswordChange,
-            label = { Text("Nhập lại mật khẩu mới") },
+            label = "Nhập lại mật khẩu mới",
             isError = uiState.passwordsMismatch,
             supportingText = {
                 if (uiState.passwordsMismatch) Text("Hai mật khẩu chưa khớp")
             },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth(),
         )
 

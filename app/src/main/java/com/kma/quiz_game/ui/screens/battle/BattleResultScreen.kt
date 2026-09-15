@@ -35,6 +35,7 @@ import com.kma.quiz_game.data.remote.dto.BattleStatusDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressStatusDto
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
+import com.kma.quiz_game.ui.components.NotificationPermissionRequest
 import com.kma.quiz_game.ui.components.battle.monsterArt
 import com.kma.quiz_game.ui.components.game.ExpReward
 import com.kma.quiz_game.ui.components.game.GoldReward
@@ -79,6 +80,11 @@ fun BattleResultScreen(
         DuoButton(text = "Về lộ trình", onClick = onBackToPath, modifier = modifier.padding(24.dp))
         return
     }
+
+    NotificationPermissionRequest(
+        pushRepository = app.pushRepository,
+        ask = finished.outcome == BattleStatusDto.WON,
+    )
 
     Column(
         modifier = modifier

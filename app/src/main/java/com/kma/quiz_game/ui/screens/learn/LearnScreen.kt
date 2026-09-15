@@ -106,9 +106,10 @@ fun LearnScreen(
                                 LessonNodeStatus.LOCKED -> Unit
                             }
                         },
+                        // Room for the "BẮT ĐẦU" tooltip, which sits above the first node.
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp),
+                            .padding(top = 32.dp),
                     )
                     HorizontalDivider(modifier = Modifier.padding(top = 24.dp))
                 }
@@ -190,7 +191,27 @@ private fun UnitBanner(title: String, description: String) {
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(text = title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimary)
-            Text(text = description, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onPrimary)
+            Text(
+                text = unitSubtitle(title, description),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
         }
     }
 }
+
+/**
+ * The description without the band the title already names: units come from the server as
+ * "TOEIC 250-450 · Chặng 1" over "TOEIC 250-450 · CEFR A1-A2 · …", and the banner said the band twice.
+ */
+internal fun unitSubtitle(title: String, description: String): String {
+    val band = title.substringBefore(UNIT_SEPARATOR, missingDelimiterValue = "")
+    val repeated = band + UNIT_SEPARATOR
+    return if (band.isNotEmpty() && description.startsWith(repeated)) {
+        description.removePrefix(repeated)
+    } else {
+        description
+    }
+}
+
+private const val UNIT_SEPARATOR = " · "

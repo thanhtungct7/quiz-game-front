@@ -2,6 +2,7 @@ package com.kma.quiz_game.ui.screens.auth
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,8 +10,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -23,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,9 +43,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.kma.quiz_game.BuildConfig
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.R
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
+import com.kma.quiz_game.ui.components.PasswordField
 import com.kma.quiz_game.ui.theme.Green500
+import com.kma.quiz_game.ui.theme.Green600
 import com.kma.quiz_game.ui.theme.Rose500
 
 @Composable
@@ -87,14 +97,34 @@ fun LoginScreen(
         }
     }
 
+    // Scrolls, and moves up with the keyboard, so the button stays reachable on a small screen.
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(64.dp))
-        Text(text = "Đăng nhập", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(24.dp))
+        Image(
+            painter = painterResource(R.drawable.mascot),
+            contentDescription = null,
+            modifier = Modifier.size(120.dp),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Green600,
+        )
+        Text(
+            text = "Học tiếng Anh mỗi ngày, đấu 1 vs 1 với bạn bè.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
         Spacer(modifier = Modifier.height(32.dp))
 
         notice?.let { message ->
@@ -116,13 +146,10 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
+        PasswordField(
             value = uiState.password,
             onValueChange = viewModel::onPasswordChange,
-            label = { Text("Mật khẩu") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            label = "Mật khẩu",
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -133,7 +160,12 @@ fun LoginScreen(
         }
 
         uiState.errorMessage?.let { message ->
-            Text(text = message, color = Rose500, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = message,
+                color = Rose500,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
             Spacer(modifier = Modifier.height(12.dp))
         }
 

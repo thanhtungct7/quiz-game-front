@@ -23,7 +23,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.data.push.PushRoute
-import com.kma.quiz_game.ui.components.NotificationPermissionRequest
 import com.kma.quiz_game.ui.screens.battle.BattleResultScreen
 import com.kma.quiz_game.ui.screens.battle.BattleScreen
 import com.kma.quiz_game.ui.screens.benchmark.BenchmarkExamScreen
@@ -58,10 +57,10 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
         currentDestination?.hierarchy?.any { it.hasRoute(item.destination::class) } == true
     }
 
-    // Signed in from here on: tell the server where to reach this install, and ask -- once --
-    // whether it may. Both are best effort; the app works the same without push.
+    // Signed in from here on: tell the server where to reach this install. Best effort; the app
+    // works the same without push. Permission is asked later, after a won battle: see
+    // [BattleResultScreen].
     LaunchedEffect(Unit) { app.pushRepository.syncToken() }
-    NotificationPermissionRequest(pushRepository = app.pushRepository)
 
     Scaffold(
         bottomBar = {
@@ -148,7 +147,7 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
                 MyProfileScreen(onLogout = { coroutineScope.launch { app.logout() } })
             }
             composable<Destination.Shop> {
-                CharacterHubScreen()
+                CharacterHubScreen(onPlayDuo = { navController.navigateToTab(Destination.Duo) })
             }
             composable<Destination.GameClass> {
                 ClassPickerScreen(onBack = { navController.popBackStack() })

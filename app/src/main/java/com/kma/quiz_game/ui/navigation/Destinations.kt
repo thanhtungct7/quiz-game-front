@@ -113,9 +113,9 @@ data class BottomNavItem(
 
 /** Also decides where the bottom bar shows: any route outside this list is full-screen. */
 val BOTTOM_NAV_ITEMS = listOf(
-    BottomNavItem(Destination.Learn, "Learn", Icons.Filled.School, Icons.Outlined.School),
-    BottomNavItem(Destination.Duo, "Duo", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports),
-    BottomNavItem(Destination.Leaderboard, "Ranking", Icons.Filled.Leaderboard, Icons.Outlined.Leaderboard),
+    BottomNavItem(Destination.Learn, "Học", Icons.Filled.School, Icons.Outlined.School),
+    BottomNavItem(Destination.Duo, "Đấu", Icons.Filled.SportsEsports, Icons.Outlined.SportsEsports),
+    BottomNavItem(Destination.Leaderboard, "Xếp hạng", Icons.Filled.Leaderboard, Icons.Outlined.Leaderboard),
     BottomNavItem(Destination.Shop, "Nhân vật", Icons.Filled.Storefront, Icons.Outlined.Storefront),
     BottomNavItem(Destination.Profile, "Hồ sơ", Icons.Filled.Person, Icons.Outlined.Person),
 )

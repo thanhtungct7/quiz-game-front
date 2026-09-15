@@ -65,7 +65,9 @@ class ResetPasswordViewModel(
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     isSubmitting = false,
-                    errorMessage = e.toUserMessage(),
+                    errorMessage = e.toUserMessage(
+                        mapOf(400 to "Mã đặt lại không hợp lệ hoặc đã hết hạn."),
+                    ),
                 )
             }
         }

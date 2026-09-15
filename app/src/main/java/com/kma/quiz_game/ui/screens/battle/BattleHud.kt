@@ -44,6 +44,8 @@ import com.kma.quiz_game.data.remote.dto.ChallengeOptionDto
 import com.kma.quiz_game.data.remote.dto.LoadoutSlotDto
 import com.kma.quiz_game.data.remote.dto.PVP_LIFELINE_EFFECTS
 import com.kma.quiz_game.ui.components.ChallengeOptionState
+import com.kma.quiz_game.ui.components.OptionImage
+import com.kma.quiz_game.ui.components.SpeakerButton
 import com.kma.quiz_game.ui.components.game.effectDescription
 import com.kma.quiz_game.ui.components.game.effectSymbol
 
@@ -118,7 +120,13 @@ private fun BattleMeter(fraction: Float, color: Color, height: Dp, modifier: Mod
     }
 }
 
-/** An answer, as a stone tile. Same five states the shared card has, read at a glance by colour. */
+/**
+ * An answer, as a stone tile. Same five states the shared card has, read at a glance by colour.
+ *
+ * An option with an [imagePath] is answered by its picture, and its word stays hidden until the
+ * answer is graded -- the word is what the question names. [onPlayAudio] adds a speaker to an
+ * option that carries a recording.
+ */
 @Composable
 fun BattleOptionCard(
     text: String,
@@ -126,6 +134,8 @@ fun BattleOptionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    imagePath: String? = null,
+    onPlayAudio: (() -> Unit)? = null,
 ) {
     val border = when (state) {
         ChallengeOptionState.NONE -> BattleTheme.Edge
@@ -142,6 +152,7 @@ fun BattleOptionCard(
         ChallengeOptionState.REMOVED -> BattleTheme.ParchmentFaint
     }
     val lit = state != ChallengeOptionState.NONE && state != ChallengeOptionState.REMOVED
+    val graded = state == ChallengeOptionState.CORRECT || state == ChallengeOptionState.WRONG
 
     Box(
         modifier = modifier
@@ -156,17 +167,38 @@ fun BattleOptionCard(
                 onClick = onClick,
             )
             .alpha(if (state == ChallengeOptionState.REMOVED) 0.5f else 1f)
-            .padding(horizontal = 14.dp, vertical = 14.dp),
+            .padding(if (imagePath != null) 6.dp else 14.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-            color = content,
-            textAlign = TextAlign.Center,
-            textDecoration =
-                if (state == ChallengeOptionState.REMOVED) TextDecoration.LineThrough else null,
-        )
+        val label: @Composable () -> Unit = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                color = content,
+                textAlign = TextAlign.Center,
+                textDecoration =
+                    if (state == ChallengeOptionState.REMOVED) TextDecoration.LineThrough else null,
+            )
+        }
+        when {
+            imagePath != null -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                OptionImage(
+                    path = imagePath,
+                    contentDescription = if (graded) text else null,
+                    modifier = Modifier.clip(BattleTheme.TileShape),
+                    fallback = label,
+                )
+                if (graded) label()
+            }
+            onPlayAudio != null -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(modifier = Modifier.weight(1f, fill = false)) { label() }
+                SpeakerButton(onClick = onPlayAudio, tint = content)
+            }
+            else -> label()
+        }
     }
 }
 

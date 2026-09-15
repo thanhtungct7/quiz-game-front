@@ -41,6 +41,10 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
     fun register() {
         val state = _uiState.value
         if (!state.canSubmit) return
+        if (!looksLikeEmail(state.email)) {
+            _uiState.value = state.copy(errorMessage = INVALID_EMAIL_MESSAGE)
+            return
+        }
         _uiState.value = state.copy(isSubmitting = true, errorMessage = null)
         viewModelScope.launch {
             val result = authRepository.register(
@@ -51,7 +55,10 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
             result.onSuccess {
                 _uiState.value = _uiState.value.copy(isSubmitting = false)
             }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(isSubmitting = false, errorMessage = e.toUserMessage())
+                _uiState.value = _uiState.value.copy(
+                    isSubmitting = false,
+                    errorMessage = e.toUserMessage(mapOf(409 to "Email này đã được đăng ký.")),
+                )
             }
         }
     }

@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.kma.quiz_game.data.remote.dto.EnergyDto
 import com.kma.quiz_game.ui.theme.Neutral100
 import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
+import com.kma.quiz_game.ui.theme.Sky500
 
 /**
  * The energy bar, as discrete pips rather than a continuous bar.
@@ -48,16 +48,17 @@ fun EnergyPips(
                     modifier = Modifier
                         .size(width = 18.dp, height = 10.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(if (index < current) Orange400 else Neutral100),
+                        .background(if (index < current) Sky500 else Neutral100),
                 )
             }
         }
         if (showHint) {
+            // Same ⚡ and the same blue as the chip over the learn path: it is one number.
             Text(
                 text = if (current <= 0) {
-                    "Hết lượt. Học xong một bài được +2 lượt."
+                    "⚡ Hết lượt. Học xong một bài được +2 lượt."
                 } else {
-                    "$current/$maximum lượt chơi"
+                    "⚡ $current/$maximum lượt chơi"
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = Neutral500,

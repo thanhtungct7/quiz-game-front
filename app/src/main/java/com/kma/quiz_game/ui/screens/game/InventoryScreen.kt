@@ -1,5 +1,6 @@
 package com.kma.quiz_game.ui.screens.game
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,9 +28,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kma.quiz_game.R
 import com.kma.quiz_game.data.remote.dto.EquipmentSlot
 import com.kma.quiz_game.data.remote.dto.ItemDto
 import com.kma.quiz_game.ui.components.DuoButton
@@ -54,7 +59,7 @@ import com.kma.quiz_game.ui.theme.ShapeXl
  * from. Skins bought in the shop land here too, in the collection below the slots.
  */
 @Composable
-fun InventoryScreen(modifier: Modifier = Modifier) {
+fun InventoryScreen(onPlayDuo: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: InventoryViewModel = viewModel(factory = rememberAppViewModelFactory())
     val state by viewModel.uiState.collectAsState()
 
@@ -71,7 +76,7 @@ fun InventoryScreen(modifier: Modifier = Modifier) {
         Text(text = "Trang bị", style = MaterialTheme.typography.headlineMedium)
         Text(
             text = "Rương rơi ra sau mỗi trận. Trang bị cộng thêm % EXP và Vàng cho mỗi bài học " +
-                "hay trận đấu bạn hoàn thành -- không đổi kết quả trận đấu.",
+                "hay trận đấu bạn hoàn thành — không đổi kết quả trận đấu.",
             style = MaterialTheme.typography.bodyLarge,
             color = Neutral500,
         )
@@ -81,7 +86,10 @@ fun InventoryScreen(modifier: Modifier = Modifier) {
             Box(Modifier.fillMaxWidth().height(200.dp), Alignment.Center) { CircularProgressIndicator() }
         }
 
-        state.inventory?.let { inventory ->
+        val inventory = state.inventory
+        if (inventory != null && inventory.items.isEmpty()) {
+            EmptyWardrobe(onPlayDuo = onPlayDuo)
+        } else if (inventory != null) {
             RewardCard {
                 RewardRow("EXP thưởng", "+${percent(inventory.bonusExpPermille)}", Green500)
                 RewardRow("Vàng thưởng", "+${percent(inventory.bonusGoldPermille)}", Indigo500)
@@ -131,17 +139,43 @@ fun InventoryScreen(modifier: Modifier = Modifier) {
                 TextButton(onClick = viewModel::load) { Text("Tải lại") }
             }
         }
+    }
+}
 
-        if (state.inventory?.items.isNullOrEmpty() && !state.isLoading) {
-            Spacer(Modifier.height(24.dp))
-            Text(
-                text = "Chưa có món nào. Đánh một trận để mở rương đầu tiên.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Neutral500,
-            )
-            Spacer(Modifier.height(12.dp))
-            DuoButton(text = "Tải lại", onClick = viewModel::load)
-        }
+/**
+ * One empty state for the whole wardrobe rather than an empty line under each of the three slots,
+ * and a way to a match as its action: a reload never fills an empty wardrobe, a chest does.
+ */
+@Composable
+private fun EmptyWardrobe(onPlayDuo: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(ShapeXl)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.mascot),
+            contentDescription = null,
+            modifier = Modifier.size(88.dp),
+        )
+        Text(
+            text = "Tủ đồ còn trống",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "Đánh xong một trận là có rương. Mở rương đầu tiên để nhận trang bị.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(4.dp))
+        DuoButton(text = "Vào đấu", onClick = onPlayDuo)
     }
 }
 
@@ -199,7 +233,7 @@ private fun SlotSection(title: String, items: List<ItemDto>, onToggle: (ItemDto)
     SectionTitle(title)
     if (items.isEmpty()) {
         Text(
-            text = "Chưa có món nào cho ô này.",
+            text = "Trống",
             style = MaterialTheme.typography.bodyMedium,
             color = Neutral500,
         )

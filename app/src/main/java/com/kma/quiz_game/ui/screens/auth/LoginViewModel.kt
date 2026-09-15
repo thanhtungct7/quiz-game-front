@@ -19,6 +19,14 @@ data class LoginUiState(
         get() = !isSubmitting && email.isNotBlank() && password.isNotBlank()
 }
 
+/** A wrong password and an inactive account are both 401 on purpose: the server does not say which. */
+private val LOGIN_ERRORS = mapOf(401 to "Email hoặc mật khẩu không đúng.")
+
+private val GOOGLE_LOGIN_ERRORS = mapOf(
+    401 to "Không đăng nhập được bằng tài khoản Google này.",
+    503 to "Đăng nhập Google đang tạm gián đoạn. Vui lòng thử lại sau.",
+)
+
 class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -34,13 +42,20 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun login() {
         val state = _uiState.value
         if (!state.canSubmit) return
+        if (!looksLikeEmail(state.email)) {
+            _uiState.value = state.copy(errorMessage = INVALID_EMAIL_MESSAGE)
+            return
+        }
         _uiState.value = state.copy(isSubmitting = true, errorMessage = null)
         viewModelScope.launch {
             val result = authRepository.login(state.email.trim(), state.password)
             result.onSuccess {
                 _uiState.value = _uiState.value.copy(isSubmitting = false)
             }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(isSubmitting = false, errorMessage = e.toUserMessage())
+                _uiState.value = _uiState.value.copy(
+                    isSubmitting = false,
+                    errorMessage = e.toUserMessage(LOGIN_ERRORS),
+                )
             }
         }
     }
@@ -56,7 +71,10 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             result.onSuccess {
                 _uiState.value = _uiState.value.copy(isSubmitting = false)
             }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(isSubmitting = false, errorMessage = e.toUserMessage())
+                _uiState.value = _uiState.value.copy(
+                    isSubmitting = false,
+                    errorMessage = e.toUserMessage(GOOGLE_LOGIN_ERRORS),
+                )
             }
         }
     }
