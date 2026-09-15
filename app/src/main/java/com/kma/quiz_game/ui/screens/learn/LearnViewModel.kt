@@ -112,29 +112,30 @@ class LearnViewModel(
 }
 
 /**
- * The first lesson that is not COMPLETED -- across the whole course, not per unit -- is ACTIVE;
- * everything after it is LOCKED, everything before it keeps its real status.
+ * Walks the whole course in path order, not unit by unit. A COMPLETED lesson is COMPLETE; a lesson
+ * that is not is ACTIVE when it opens the path or the lesson before it is completed, and LOCKED
+ * otherwise.
+ *
+ * Judging each lesson by its predecessor, rather than locking everything after the first gap, is
+ * what lets new units be woven into the path: a learner who is past the point where they land
+ * finds their opening lesson ACTIVE, and every lesson they already finished further on stays
+ * COMPLETE instead of disappearing behind a padlock.
  */
-private fun toUnitUi(
+internal fun toUnitUi(
     tree: CourseTree,
     progress: Map<String, LessonProgressDto>,
     monsters: Map<String, CourseMonsterDto>,
 ): List<UnitUi> {
-    val flatLessonIds = tree.units.flatMap { unit -> unit.lessons.map { it.id } }
-    val firstIncompleteIndex = flatLessonIds.indexOfFirst {
-        progress[it]?.status != LessonProgressStatusDto.COMPLETED
-    }
-
-    var index = 0
+    var previousCompleted = true
     return tree.units.map { unit ->
         val lessonItems = unit.lessons.map { lesson ->
+            val completed = progress[lesson.id]?.status == LessonProgressStatusDto.COMPLETED
             val status = when {
-                firstIncompleteIndex == -1 || index < firstIncompleteIndex ->
-                    LessonNodeStatus.COMPLETE
-                index == firstIncompleteIndex -> LessonNodeStatus.ACTIVE
+                completed -> LessonNodeStatus.COMPLETE
+                previousCompleted -> LessonNodeStatus.ACTIVE
                 else -> LessonNodeStatus.LOCKED
             }
-            index++
+            previousCompleted = completed
             val monster = monsters[lesson.id]
             LessonPathItem(
                 id = lesson.id,
