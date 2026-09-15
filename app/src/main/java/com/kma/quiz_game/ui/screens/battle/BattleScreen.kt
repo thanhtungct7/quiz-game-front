@@ -51,6 +51,7 @@ import com.kma.quiz_game.data.repository.BattleRepository
 import com.kma.quiz_game.data.repository.BattleSession
 import com.kma.quiz_game.data.repository.ConnectionState
 import com.kma.quiz_game.ui.components.ChallengeOptionState
+import com.kma.quiz_game.ui.components.rememberOptionAudioPlayer
 import com.kma.quiz_game.ui.components.battle.LeaveBattleDialog
 import com.kma.quiz_game.ui.game.ArenaSurface
 import kotlinx.coroutines.delay
@@ -429,6 +430,8 @@ private fun QuestionBody(
         }
         Spacer(Modifier.height(16.dp))
 
+        val audio = rememberOptionAudioPlayer()
+
         if (question.type == ChallengeTypeDto.ORDER) {
             // The sentence is the answer, so the whole word bank is the surface -- there is no
             // grid of options to draw and no single option to select.
@@ -449,6 +452,8 @@ private fun QuestionBody(
                         state = optionState(option.id, session),
                         onClick = { onSelect(option.id) },
                         enabled = enabled,
+                        imagePath = option.imageSrc,
+                        onPlayAudio = option.audioSrc?.let { src -> { audio.play(src) } },
                     )
                 }
             }
@@ -465,6 +470,8 @@ private fun QuestionBody(
                         state = optionState(option.id, session),
                         onClick = { onSelect(option.id) },
                         enabled = enabled,
+                        imagePath = option.imageSrc,
+                        onPlayAudio = option.audioSrc?.let { src -> { audio.play(src) } },
                     )
                 }
             }

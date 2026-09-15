@@ -47,6 +47,7 @@ import com.kma.quiz_game.ui.components.QuestionBubble
 import com.kma.quiz_game.ui.components.SentenceBuilder
 import com.kma.quiz_game.ui.components.SentenceStatus
 import com.kma.quiz_game.ui.components.WordTile
+import com.kma.quiz_game.ui.components.rememberOptionAudioPlayer
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Rose500
 
@@ -157,6 +158,7 @@ fun BenchmarkExamScreen(
                     }
 
                     ChallengeTypeDto.ASSIST -> {
+                        val audio = rememberOptionAudioPlayer()
                         QuestionBubble(question = question.question, modifier = Modifier.fillMaxWidth())
                         Spacer(modifier = Modifier.height(16.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -166,12 +168,15 @@ fun BenchmarkExamScreen(
                                     state = selectionState(option.id, uiState.selectedOptionId),
                                     onClick = { viewModel.selectOption(option.id) },
                                     enabled = !uiState.isSubmitting,
+                                    imagePath = option.imageSrc,
+                                    onPlayAudio = option.audioSrc?.let { src -> { audio.play(src) } },
                                 )
                             }
                         }
                     }
 
                     ChallengeTypeDto.SELECT -> {
+                        val audio = rememberOptionAudioPlayer()
                         Text(
                             text = question.question,
                             style = MaterialTheme.typography.headlineMedium,
@@ -188,6 +193,8 @@ fun BenchmarkExamScreen(
                                     state = selectionState(option.id, uiState.selectedOptionId),
                                     onClick = { viewModel.selectOption(option.id) },
                                     enabled = !uiState.isSubmitting,
+                                    imagePath = option.imageSrc,
+                                    onPlayAudio = option.audioSrc?.let { src -> { audio.play(src) } },
                                 )
                             }
                         }

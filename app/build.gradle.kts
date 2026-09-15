@@ -65,6 +65,14 @@ android {
         // Must also be whitelisted in res/xml/network_security_config.xml (cleartext HTTP).
         buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.8:8000/api/v1/\"")
 
+        // Firebase Storage download endpoint. Content stores paths inside the bucket
+        // (vocab/images/01_0001.jpg), readable without signing in by the storage rule on vocab/**.
+        buildConfigField(
+            "String",
+            "MEDIA_BASE_URL",
+            "\"https://firebasestorage.googleapis.com/v0/b/duo-d298a.firebasestorage.app/o/\"",
+        )
+
         // Must match the backend's GOOGLE_WEB_CLIENT_ID (see duo-game-back/.env) -- GoogleSignIn
         // issues a Google ID token whose audience is this *Web* OAuth client, not an Android
         // one, even though it's requested from the Android app.

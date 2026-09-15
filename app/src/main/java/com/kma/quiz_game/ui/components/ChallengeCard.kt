@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +49,12 @@ private fun colorsFor(state: ChallengeOptionState): OptionColors = when (state) 
     ChallengeOptionState.REMOVED -> OptionColors(Neutral200, Neutral050, Neutral300)
 }
 
-/** A single answer option, used both for SELECT (grid) and ASSIST (single column) challenges. */
+/**
+ * A single answer option, used both for SELECT (grid) and ASSIST (single column) challenges.
+ *
+ * An option with an [imagePath] is answered by its picture, and its word stays hidden until the
+ * answer is graded. [onPlayAudio] adds a speaker to an option that carries a recording.
+ */
 @Composable
 fun ChallengeOptionCard(
     text: String,
@@ -54,9 +62,12 @@ fun ChallengeOptionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    imagePath: String? = null,
+    onPlayAudio: (() -> Unit)? = null,
 ) {
     val colors = colorsFor(state)
     val interactionSource = remember { MutableInteractionSource() }
+    val graded = state == ChallengeOptionState.CORRECT || state == ChallengeOptionState.WRONG
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -69,15 +80,36 @@ fun ChallengeOptionCard(
                 enabled = enabled,
                 onClick = onClick,
             )
-            .padding(16.dp),
+            .padding(if (imagePath != null) 8.dp else 16.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-            color = colors.content,
-            textDecoration = if (state == ChallengeOptionState.REMOVED) TextDecoration.LineThrough else null,
-        )
+        val label: @Composable () -> Unit = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.content,
+                textDecoration = if (state == ChallengeOptionState.REMOVED) TextDecoration.LineThrough else null,
+            )
+        }
+        when {
+            imagePath != null -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                OptionImage(
+                    path = imagePath,
+                    contentDescription = if (graded) text else null,
+                    modifier = Modifier.clip(ShapeXl),
+                    fallback = label,
+                )
+                if (graded) label()
+            }
+            onPlayAudio != null -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(modifier = Modifier.weight(1f, fill = false)) { label() }
+                SpeakerButton(onClick = onPlayAudio, tint = colors.content)
+            }
+            else -> label()
+        }
     }
 }
 

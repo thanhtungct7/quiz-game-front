@@ -49,6 +49,7 @@ import com.kma.quiz_game.data.repository.ConnectionState
 import com.kma.quiz_game.data.repository.DuoPhase
 import com.kma.quiz_game.data.repository.DuoSession
 import com.kma.quiz_game.ui.components.ChallengeOptionState
+import com.kma.quiz_game.ui.components.rememberOptionAudioPlayer
 import com.kma.quiz_game.ui.components.duo.DuelHeader
 import com.kma.quiz_game.ui.components.duo.ForfeitDialog
 import com.kma.quiz_game.ui.components.duo.MatchChatSheet
@@ -478,6 +479,7 @@ private fun QuestionBody(
         }
         Spacer(Modifier.height(16.dp))
 
+        val audio = rememberOptionAudioPlayer()
         if (question.type == ChallengeTypeDto.ASSIST) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 question.options.forEach { option ->
@@ -486,6 +488,8 @@ private fun QuestionBody(
                         state = optionState(option.id, session),
                         onClick = { onSelect(option.id) },
                         enabled = enabled && option.id !in session.removedOptionIds,
+                        imagePath = option.imageSrc,
+                        onPlayAudio = option.audioSrc?.let { src -> { audio.play(src) } },
                     )
                 }
             }
@@ -502,6 +506,8 @@ private fun QuestionBody(
                         state = optionState(option.id, session),
                         onClick = { onSelect(option.id) },
                         enabled = enabled && option.id !in session.removedOptionIds,
+                        imagePath = option.imageSrc,
+                        onPlayAudio = option.audioSrc?.let { src -> { audio.play(src) } },
                     )
                 }
             }
