@@ -61,9 +61,20 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Host machine's LAN IP, for testing from a physical device on the same Wi-Fi.
-        // Must also be whitelisted in res/xml/network_security_config.xml (cleartext HTTP).
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.8:8000/api/v1/\"")
+        // Public HTTPS URL of the ngrok tunnel to the dev backend, so a physical device reaches
+        // it without sharing the host's Wi-Fi. Must also be listed in ALLOWED_HOSTS in
+        // duo-game-back/.env, or the server answers 400 "Invalid host header". Being HTTPS it
+        // needs no entry in res/xml/network_security_config.xml -- that file only widens
+        // cleartext HTTP, which the LAN fallback below still requires.
+        //
+        // Offline fallback, when there is no internet at the venue: swap the two lines. The LAN
+        // IP must then be in network_security_config.xml AND in ALLOWED_HOSTS as well.
+        // buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.8:8000/api/v1/\"")
+        buildConfigField(
+            "String",
+            "API_BASE_URL",
+            "\"https://decline-backside-zoologist.ngrok-free.dev/api/v1/\"",
+        )
 
         // Firebase Storage download endpoint. Content stores paths inside the bucket
         // (vocab/images/01_0001.jpg), readable without signing in by the storage rule on vocab/**.
