@@ -44,7 +44,6 @@ import com.kma.quiz_game.ui.components.game.RewardCard
 import com.kma.quiz_game.ui.components.game.RewardRow
 import com.kma.quiz_game.ui.components.game.StreakReward
 import com.kma.quiz_game.ui.theme.Green500
-import com.kma.quiz_game.ui.theme.Neutral050
 import com.kma.quiz_game.ui.theme.Neutral500
 import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400

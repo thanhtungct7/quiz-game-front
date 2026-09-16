@@ -176,6 +176,93 @@ private fun StatBarRow(
     }
 }
 
+/**
+ * The same three numbers as [CombatStatBars], on one line.
+ *
+ * The profile is an academic record first -- `android.md` §1.1/§3A -- so the fighting build gets a
+ * line here instead of a third of the card, and the detail stays one tap away: each chip opens the
+ * same breakdown a bar used to. [CombatStatBars] is kept for surfaces that are about the build
+ * rather than about the learner, where three full-width bars are the right amount of room.
+ */
+@Composable
+fun CombatStatSummary(
+    combat: CombatStatsDto,
+    onOpenBreakdown: (CombatStat) -> Unit,
+    modifier: Modifier = Modifier,
+    onSurface: Color = Color.White,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        StatChip(
+            icon = Icons.Filled.Favorite,
+            label = "HP",
+            value = "${combat.hp}",
+            color = Green500,
+            onSurface = onSurface,
+            onClick = { onOpenBreakdown(CombatStat.HP) },
+        )
+        StatChip(
+            icon = Icons.Filled.Whatshot,
+            label = "ATK",
+            value = "${combat.atk}",
+            color = Rose500,
+            onSurface = onSurface,
+            onClick = { onOpenBreakdown(CombatStat.ATK) },
+        )
+        StatChip(
+            icon = Icons.Filled.Shield,
+            label = "DEF",
+            value = "${combat.defence}",
+            color = Sky500,
+            onSurface = onSurface,
+            onClick = { onOpenBreakdown(CombatStat.DEFENCE) },
+        )
+    }
+}
+
+/**
+ * One stat as a tappable chip.
+ *
+ * The tap is labelled rather than left to the icon: a screen reader announces "HP 118, xem nguồn
+ * điểm HP", which is the whole of what the row used to need a separate info icon to say.
+ */
+@Composable
+private fun StatChip(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    color: Color,
+    onSurface: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(onSurface.copy(alpha = 0.10f))
+            .clickable(onClickLabel = "Xem nguồn điểm $label", onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = onSurface.copy(alpha = 0.70f),
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelLarge,
+            color = onSurface,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
 /** The mana figure, drawn as a chip beside the bars rather than as one of them. */
 @Composable
 fun ManaChip(mana: Int, modifier: Modifier = Modifier, onSurface: Color = Color.White) {

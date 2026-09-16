@@ -2,6 +2,7 @@ package com.kma.quiz_game
 
 import android.app.Application
 import com.kma.quiz_game.data.local.AppDatabase
+import com.kma.quiz_game.data.local.SettingsStore
 import com.kma.quiz_game.data.push.NotificationChannels
 import com.kma.quiz_game.data.push.PushRepository
 import com.kma.quiz_game.data.remote.BattleSocket
@@ -35,6 +36,10 @@ class DuoGameApplication : Application() {
 
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
     private val tokenStore: TokenStore by lazy { TokenStore(this) }
+
+    /** Public, unlike [tokenStore]: the activity reads the theme before any screen exists, and the
+     * profile screen writes it. Survives logout on purpose -- see [SettingsStore]. */
+    val settingsStore: SettingsStore by lazy { SettingsStore(this) }
 
     // Unauthenticated -- carries no AuthInterceptor, so AuthApi.refresh() never recurses.
     private val authRetrofit by lazy { NetworkModule.buildAuthRetrofit() }

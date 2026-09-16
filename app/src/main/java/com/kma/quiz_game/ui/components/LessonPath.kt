@@ -36,8 +36,6 @@ import androidx.compose.ui.unit.sp
 import com.kma.quiz_game.ui.components.battle.monsterArt
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Green600
-import com.kma.quiz_game.ui.theme.Neutral200
-import com.kma.quiz_game.ui.theme.Neutral400
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
 import com.kma.quiz_game.ui.theme.ShapeFull
 
@@ -145,7 +143,12 @@ fun LessonNode(
                 // A locked gate keeps its padlock: showing which monster waits behind a gate the
                 // player cannot open yet would only be a tease.
                 status == LessonNodeStatus.LOCKED ->
-                    Icon(Icons.Filled.Lock, contentDescription = "đã khoá", tint = Neutral400, modifier = Modifier.size(24.dp))
+                    Icon(
+                        Icons.Filled.Lock,
+                        contentDescription = "đã khoá",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp),
+                    )
 
                 monsterArtCode != null -> Text(
                     text = monsterArt(monsterArtCode),
@@ -192,18 +195,33 @@ private fun StartTooltip(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(ShapeFull)
-            .background(Color.White)
-            .border(width = 2.dp, color = Neutral200, shape = ShapeFull)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(width = 2.dp, color = MaterialTheme.colorScheme.outline, shape = ShapeFull)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Text(text = "BẮT ĐẦU", style = MaterialTheme.typography.labelMedium, color = Green600)
+        // `primary` rather than Green600: the pill now takes its background from the theme, and
+        // the same token has to stay legible on the light one and the dark one.
+        Text(
+            text = "BẮT ĐẦU",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 
+/**
+ * A locked gate reads from the theme rather than from a fixed light grey.
+ *
+ * `Neutral200` is a *light* grey: on the dark path every locked node came out as the brightest
+ * thing on the screen, which is the opposite of what "locked" should look like. The two open
+ * states keep the brand green in both themes -- that is the path's signature, and it is legible
+ * on either background.
+ */
+@Composable
 private fun nodeBackground(status: LessonNodeStatus): Color = when (status) {
     LessonNodeStatus.COMPLETE -> Green500
     LessonNodeStatus.ACTIVE -> Green500
-    LessonNodeStatus.LOCKED -> Neutral200
+    LessonNodeStatus.LOCKED -> MaterialTheme.colorScheme.surfaceContainerHighest
 }
 
 private fun nodeBorderWidth(status: LessonNodeStatus, showsMonster: Boolean) = when {

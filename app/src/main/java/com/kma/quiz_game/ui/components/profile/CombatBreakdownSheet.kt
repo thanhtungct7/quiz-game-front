@@ -35,10 +35,6 @@ import com.kma.quiz_game.data.remote.dto.StatSourceDto
 import com.kma.quiz_game.data.remote.dto.StatSourceKind
 import com.kma.quiz_game.ui.screens.profile.CombatStat
 import com.kma.quiz_game.ui.theme.Green500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral600
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Sky500
 
@@ -87,7 +83,7 @@ fun CombatBreakdownSheet(
             Text(
                 text = stat.explanation,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(Modifier.height(16.dp))
@@ -103,7 +99,7 @@ fun CombatBreakdownSheet(
                 sources.isEmpty() -> Text(
                     text = "Chưa bóc tách được nguồn điểm. Con số ở trên vẫn là con số trận đấu dùng.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Neutral500,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 else -> SourceTable(stat = stat, sources = sources, total = total)
@@ -118,7 +114,7 @@ private fun FocusedTotal(stat: CombatStat, total: CombatStatsDto) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -130,12 +126,12 @@ private fun FocusedTotal(stat: CombatStat, total: CombatStatsDto) {
         )
         Spacer(Modifier.width(12.dp))
         Column {
-            Text(text = stat.label, style = MaterialTheme.typography.titleMedium, color = Neutral700)
+            Text(text = stat.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             if (stat == CombatStat.ATK) {
                 Text(
                     text = "Hệ số x${"%.2f".format(total.damagePermille / 1000f)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -155,7 +151,7 @@ private fun SourceTable(stat: CombatStat, sources: List<StatSourceDto>, total: C
             Text(
                 text = "Nguồn",
                 style = MaterialTheme.typography.labelMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             ColumnHeading("HP", stat == CombatStat.HP)
@@ -174,14 +170,14 @@ private fun SourceTable(stat: CombatStat, sources: List<StatSourceDto>, total: C
                     Text(
                         text = source.label,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Neutral700,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = kindLabel(source.kind),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Neutral500,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 DeltaCell(source.hp, stat == CombatStat.HP)
@@ -189,7 +185,7 @@ private fun SourceTable(stat: CombatStat, sources: List<StatSourceDto>, total: C
                 DeltaCell(source.defence, stat == CombatStat.DEFENCE)
                 DeltaCell(source.mana, false)
             }
-            HorizontalDivider(color = Neutral050)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
 
         Spacer(Modifier.height(10.dp))
@@ -197,7 +193,7 @@ private fun SourceTable(stat: CombatStat, sources: List<StatSourceDto>, total: C
             Text(
                 text = "Tổng",
                 style = MaterialTheme.typography.titleSmall,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
             )
@@ -211,7 +207,7 @@ private fun SourceTable(stat: CombatStat, sources: List<StatSourceDto>, total: C
         Text(
             text = "Số liệu do máy chủ cộng sẵn — đây đúng là chỉ số trận đấu sẽ dùng.",
             style = MaterialTheme.typography.bodySmall,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 6.dp),
         )
     }
@@ -222,7 +218,7 @@ private fun ColumnHeading(text: String, focused: Boolean) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
-        color = if (focused) Neutral700 else Neutral500,
+        color = if (focused) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
         fontWeight = if (focused) FontWeight.Bold else FontWeight.Normal,
         textAlign = TextAlign.End,
         modifier = Modifier.width(CELL_WIDTH),
@@ -237,9 +233,9 @@ private fun DeltaCell(value: Int, focused: Boolean) {
         text = if (value == 0) "—" else "+$value",
         style = MaterialTheme.typography.bodyMedium,
         color = when {
-            value == 0 -> Neutral500
-            focused -> Neutral700
-            else -> Neutral600
+            value == 0 -> MaterialTheme.colorScheme.onSurfaceVariant
+            focused -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
         },
         fontWeight = if (focused && value != 0) FontWeight.Bold else FontWeight.Normal,
         textAlign = TextAlign.End,

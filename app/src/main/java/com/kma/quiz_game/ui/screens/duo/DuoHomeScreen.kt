@@ -60,9 +60,6 @@ import com.kma.quiz_game.ui.components.game.EnergyPips
 import com.kma.quiz_game.ui.components.game.TierBadge
 import com.kma.quiz_game.ui.components.duo.toUserMessage
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 
@@ -240,7 +237,7 @@ private fun LobbyActions(
         DuoButton(text = "Lịch sử đấu", onClick = onOpenHistory, variant = DuoButtonVariant.Outline)
 
         TextButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
-            Text(text = "Thể thức: $settingsSummary", color = Neutral500)
+            Text(text = "Thể thức: $settingsSummary", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -251,7 +248,7 @@ private fun QueueingPanel(position: Int, waitedSeconds: Int, onCancel: () -> Uni
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -261,14 +258,14 @@ private fun QueueingPanel(position: Int, waitedSeconds: Int, onCancel: () -> Uni
         Text(
             text = if (position > 0) "Vị trí $position · đã chờ ${waitedSeconds}s" else "Đã chờ ${waitedSeconds}s",
             style = MaterialTheme.typography.bodyMedium,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
         // The band widens by 50 Elo every 5 seconds, so waiting genuinely helps.
         Text(
             text = "Càng chờ lâu, khoảng chênh lệch trình độ càng được nới rộng.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(20.dp))
@@ -303,7 +300,7 @@ private fun RoomLobbyPanel(
                 Text(
                     text = "Đang chờ người thứ hai…",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Neutral500,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -322,7 +319,7 @@ private fun RoomLobbyPanel(
                     Text(
                         text = "${opponent.username ?: "Đối thủ"} đã vào phòng",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Neutral700,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TierBadge(tier = opponent.tier, compact = true)
@@ -330,7 +327,7 @@ private fun RoomLobbyPanel(
                         Text(
                             text = "Cấp ${opponent.level} · ${opponent.rating} điểm",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Neutral500,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -349,7 +346,7 @@ private fun RoomLobbyPanel(
             Text(
                 text = "Chờ chủ phòng bắt đầu trận.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -374,7 +371,7 @@ private fun MatchSettingsSheet(
                     "đối thủ. Đúng thì chém ngay, sai thì mất chuỗi và câu đó bị đẩy xuống cuối " +
                     "để làm lại. Hết máu hoặc xong sạch bộ câu trước là kết thúc.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(12.dp))
             // Random matchmaking compares settings for equality, so this is a real trade-off.
@@ -404,7 +401,7 @@ private fun MatchSettingsSheet(
             Text(
                 text = "Trả lời trong mốc này thì đòn nặng nhất; chậm hơn vẫn tính đúng, chỉ nhẹ đòn.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Slider(
                 value = settings.timePerQuestion.toFloat(),
@@ -458,18 +455,18 @@ private fun JoinRoomDialog(state: DuoHomeUiState, viewModel: DuoHomeViewModel) {
                 )
                 Spacer(Modifier.height(12.dp))
                 when {
-                    state.isPreviewingRoom -> Text("Đang kiểm tra phòng…", color = Neutral500)
+                    state.isPreviewingRoom -> Text("Đang kiểm tra phòng…", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     state.joinErrorMessage != null -> Text(state.joinErrorMessage, color = Rose500)
                     state.roomPreview != null -> Text(
                         text = "Phòng của ${state.roomPreview.host.username ?: "người chơi"} · " +
                             "${state.roomPreview.settings.questionCount} câu · " +
                             "mốc ${state.roomPreview.settings.timePerQuestion}s",
-                        color = Neutral700,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
 
                     else -> Text(
                         text = "Nhập ${DuoRepository.ROOM_CODE_LENGTH} ký tự chủ phòng đọc cho bạn.",
-                        color = Neutral500,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -527,7 +524,7 @@ private fun PlayerCard(state: DuoHomeUiState) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -541,7 +538,7 @@ private fun PlayerCard(state: DuoHomeUiState) {
             Text(
                 text = me?.username ?: "Bạn",
                 style = MaterialTheme.typography.titleMedium,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -550,7 +547,7 @@ private fun PlayerCard(state: DuoHomeUiState) {
                 Text(
                     text = "Cấp ${profile?.level ?: me?.level ?: 1}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Neutral500,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             val streak = profile?.dayStreak ?: me?.dayStreak ?: 0
@@ -568,7 +565,7 @@ private fun PlayerCard(state: DuoHomeUiState) {
                     text = "${season.name}: ${season.rating} điểm" +
                         (season.ratingToNextTier?.let { " · còn $it lên hạng" } ?: ""),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Neutral500,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -579,7 +576,7 @@ private fun PlayerCard(state: DuoHomeUiState) {
                 color = Orange400,
                 fontWeight = FontWeight.Bold,
             )
-            Text(text = "vàng", style = MaterialTheme.typography.bodyMedium, color = Neutral500)
+            Text(text = "vàng", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -608,7 +605,7 @@ private fun GameEntry(symbol: String, label: String, onClick: () -> Unit, modifi
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -617,7 +614,7 @@ private fun GameEntry(symbol: String, label: String, onClick: () -> Unit, modifi
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = Neutral700,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             textAlign = TextAlign.Center,
         )

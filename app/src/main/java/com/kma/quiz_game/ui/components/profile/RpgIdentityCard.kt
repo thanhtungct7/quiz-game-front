@@ -59,7 +59,9 @@ fun RpgIdentityCard(
     modifier: Modifier = Modifier,
     /** Tapping a bar. Absent on another player's card: a breakdown is self-only. */
     onOpenBreakdown: ((CombatStat) -> Unit)? = null,
-    portraitHeight: Dp = 190.dp,
+    // Down from 190dp: with the three stat bars collapsed to one line of chips, the card is no
+    // longer allowed to eat half the profile -- the academic figures below it come first.
+    portraitHeight: Dp = 140.dp,
 ) {
     val glow = heroGlowFor(profile.skinCode, profile.cefr)
     val ring = tierStyle(profile.pvp.tier).color
@@ -93,7 +95,7 @@ fun RpgIdentityCard(
         )
 
         Spacer(Modifier.height(6.dp))
-        CombatStatBars(
+        CombatStatSummary(
             combat = profile.combat,
             // Another player's card shows the same three numbers and simply does not react to a
             // tap -- the itemised build behind them is the account holder's business.

@@ -4,14 +4,17 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import com.badlogic.gdx.backends.android.AndroidFragmentApplication
+import com.kma.quiz_game.data.local.ThemeMode
 import com.kma.quiz_game.data.push.PushRoute
 import com.kma.quiz_game.ui.navigation.RootNavHost
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
@@ -47,11 +50,16 @@ class MainActivity : FragmentActivity(), AndroidFragmentApplication.Callbacks {
         if (savedInstanceState == null) pushRoute.value = intent?.pushRouteOrNull()
         enableEdgeToEdge()
         setContent {
-            Quiz_gameTheme {
+            val app = applicationContext as DuoGameApplication
+            // Read outside the theme, because it is what decides the theme. The stored default is
+            // ThemeMode.SYSTEM, which resolves to exactly what Quiz_gameTheme used to do on its
+            // own -- so an install that never touches the switch behaves as before.
+            val themeMode by app.settingsStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+
+            Quiz_gameTheme(darkTheme = themeMode.isDark(isSystemInDarkTheme())) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val token by resetToken
                     val route by pushRoute
-                    val app = applicationContext as DuoGameApplication
 
                     // Finishing the reset revokes every refresh token server-side, so the session
                     // on this device is spent either way -- ending it up front keeps the app from

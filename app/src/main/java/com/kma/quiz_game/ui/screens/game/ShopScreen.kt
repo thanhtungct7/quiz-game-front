@@ -37,9 +37,6 @@ import com.kma.quiz_game.ui.components.game.rarityColor
 import com.kma.quiz_game.ui.components.game.rarityLabel
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.ShapeXl
@@ -83,7 +80,7 @@ fun ShopScreen(modifier: Modifier = Modifier) {
             text = "Vàng kiếm được từ bài học và trận đấu. Trang phục chỉ đổi vẻ ngoài, " +
                 "không cộng chỉ số nào.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
 
@@ -124,7 +121,7 @@ fun ShopScreen(modifier: Modifier = Modifier) {
             Text(
                 text = "Cửa hàng chưa có món nào.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
             DuoButton(text = "Tải lại", onClick = viewModel::load, variant = DuoButtonVariant.Outline)
@@ -145,7 +142,7 @@ private fun ShopRow(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(ShapeXl)
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 2.dp,
                 color = if (action == ShopItemAction.OWNED) Green500 else color,
@@ -160,7 +157,7 @@ private fun ShopRow(
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Text(
@@ -180,7 +177,7 @@ private fun ShopRow(
             ShopItemAction.TOO_EXPENSIVE -> Text(
                 text = "Chưa đủ vàng",
                 style = MaterialTheme.typography.labelLarge,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
             )
 

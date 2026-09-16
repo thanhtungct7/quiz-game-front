@@ -2,6 +2,8 @@ package com.kma.quiz_game.ui.screens.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kma.quiz_game.data.local.SettingsStore
+import com.kma.quiz_game.data.local.ThemeMode
 import com.kma.quiz_game.data.remote.dto.AchievementListDto
 import com.kma.quiz_game.data.remote.dto.CombatBreakdownDto
 import com.kma.quiz_game.data.remote.dto.InventoryDto
@@ -86,6 +88,10 @@ data class ProfileUiState(
 
     /** The edit sheet. A modal rather than a screen, so a rename does not cost a navigation. */
     val isEditing: Boolean = false,
+
+    /** The palette this install draws in. Read from `SettingsStore`, not from the account: it is
+     * a property of the phone, so it is here rather than in the profile payload. */
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 ) {
     val hasAvatar: Boolean get() = avatarUrl != null
 
@@ -136,6 +142,7 @@ data class ProfileUiState(
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
     private val gameRepository: GameRepository,
+    private val settingsStore: SettingsStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -151,6 +158,13 @@ class ProfileViewModel(
         viewModelScope.launch {
             profileRepository.selfProfile.collect { card ->
                 _uiState.update { it.copy(card = card) }
+            }
+        }
+        // The switch on this screen is not the only thing that can change this -- the activity
+        // reads the same flow -- so the screen follows the store rather than its own last write.
+        viewModelScope.launch {
+            settingsStore.themeMode.collect { mode ->
+                _uiState.update { it.copy(themeMode = mode) }
             }
         }
     }
@@ -261,6 +275,15 @@ class ProfileViewModel(
         if (_uiState.value.selectedTab == tab) return
         _uiState.update { it.copy(selectedTab = tab) }
         if (tab == ProfileTab.WARDROBE) loadWardrobe()
+    }
+
+    /**
+     * Stores the chosen palette. The UI is not updated here: the store is the single source, and
+     * the collector in `init` is what carries the change back to both this screen and the activity.
+     */
+    fun setThemeMode(mode: ThemeMode) {
+        if (_uiState.value.themeMode == mode) return
+        viewModelScope.launch { settingsStore.setThemeMode(mode) }
     }
 
     /** Opens the breakdown for one bar, fetching the lines the first time. */

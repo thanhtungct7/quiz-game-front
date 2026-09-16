@@ -45,9 +45,6 @@ import com.kma.quiz_game.ui.components.game.rarityLabel
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Indigo500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.ShapeXl
 
@@ -78,7 +75,7 @@ fun InventoryScreen(onPlayDuo: () -> Unit, modifier: Modifier = Modifier) {
             text = "Rương rơi ra sau mỗi trận. Trang bị cộng thêm % EXP và Vàng cho mỗi bài học " +
                 "hay trận đấu bạn hoàn thành — không đổi kết quả trận đấu.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
 
@@ -106,7 +103,7 @@ fun InventoryScreen(onPlayDuo: () -> Unit, modifier: Modifier = Modifier) {
                     text = "Đổi bộ đồ của nhân vật trên thẻ hồ sơ. " +
                         "Không mặc gì thì về bộ mặc định, màu theo bậc CEFR.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Neutral500,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 state.skins.forEach { item ->
                     SkinRow(
@@ -124,7 +121,7 @@ fun InventoryScreen(onPlayDuo: () -> Unit, modifier: Modifier = Modifier) {
                         text = "${item.name} · ${rarityLabel(item.rarity)}" +
                             if (item.quantity > 1) " ×${item.quantity}" else "",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Neutral500,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 2.dp),
                     )
                 }
@@ -184,7 +181,7 @@ private fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
-        color = Neutral700,
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(vertical = 8.dp),
     )
 }
@@ -198,7 +195,7 @@ private fun SkinRow(item: ItemDto, worn: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(ShapeXl)
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(width = 2.dp, color = if (worn) Green500 else color, shape = ShapeXl)
             .clickable(onClick = onClick)
             .padding(12.dp),
@@ -210,7 +207,7 @@ private fun SkinRow(item: ItemDto, worn: Boolean, onClick: () -> Unit) {
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Text(
@@ -235,7 +232,7 @@ private fun SlotSection(title: String, items: List<ItemDto>, onToggle: (ItemDto)
         Text(
             text = "Trống",
             style = MaterialTheme.typography.bodyMedium,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         return
     }
@@ -250,7 +247,7 @@ private fun ItemRow(item: ItemDto, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(ShapeXl)
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 2.dp,
                 color = if (item.equipped) Green500 else color,
@@ -266,7 +263,7 @@ private fun ItemRow(item: ItemDto, onClick: () -> Unit) {
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Text(

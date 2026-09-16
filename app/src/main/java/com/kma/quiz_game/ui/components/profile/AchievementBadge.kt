@@ -46,11 +46,7 @@ import com.kma.quiz_game.data.remote.dto.AchievementDto
 import com.kma.quiz_game.data.remote.dto.AchievementProgressDto
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Indigo500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral100
-import com.kma.quiz_game.ui.theme.Neutral300
 import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Sky500
@@ -92,7 +88,7 @@ fun AchievementBadge(
         Text(
             text = achievement.name,
             style = MaterialTheme.typography.labelSmall,
-            color = Neutral700,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -109,13 +105,16 @@ fun AchievementBadge(
  */
 @Composable
 fun AchievementProgressRow(item: AchievementProgressDto, modifier: Modifier = Modifier) {
-    val accent = if (item.unlocked) categoryColor(item.category) else Neutral300
+    val accent = if (item.unlocked) categoryColor(item.category) else MaterialTheme.colorScheme.outline
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(if (item.unlocked) accent.copy(alpha = 0.08f) else Neutral050)
+            .background(
+                if (item.unlocked) accent.copy(alpha = 0.08f)
+                else MaterialTheme.colorScheme.surfaceContainer,
+            )
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -139,13 +138,17 @@ fun AchievementProgressRow(item: AchievementProgressDto, modifier: Modifier = Mo
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.titleSmall,
-                color = if (item.unlocked) Neutral700 else Neutral500,
+                color = if (item.unlocked) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = item.description,
                 style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -157,7 +160,7 @@ fun AchievementProgressRow(item: AchievementProgressDto, modifier: Modifier = Mo
                             .weight(1f)
                             .height(6.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(Neutral100),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     ) {
                         Box(
                             modifier = Modifier
@@ -171,7 +174,7 @@ fun AchievementProgressRow(item: AchievementProgressDto, modifier: Modifier = Mo
                     Text(
                         text = "${item.current}/${item.threshold}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Neutral500,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

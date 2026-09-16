@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,11 +37,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.AvatarImage
+import com.kma.quiz_game.data.local.ThemeMode
 import com.kma.quiz_game.data.remote.dto.AchievementCategory
 import com.kma.quiz_game.data.remote.dto.ItemDto
 import com.kma.quiz_game.data.remote.dto.SelfProfileDto
@@ -62,10 +65,6 @@ import com.kma.quiz_game.ui.components.profile.categoryLabel
 import com.kma.quiz_game.ui.components.profile.defaultRadarAxes
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral600
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Sky500
@@ -149,6 +148,17 @@ fun MyProfileScreen(
             }
         }
 
+        // Above the tab row rather than inside the overview tab. Level, the bar towards the next
+        // one and the CEFR band on offer are what `android.md` §3A says this screen is for, so
+        // they must not sit one tab away behind a card about combat.
+        item(key = "level") {
+            uiState.card?.let { card ->
+                SectionCard(title = "Cấp độ") {
+                    LevelProgress(card)
+                }
+            }
+        }
+
         item(key = "actions") {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 DuoButton(
@@ -172,6 +182,23 @@ fun MyProfileScreen(
                         Spacer(Modifier.size(8.dp))
                     },
                 )
+            }
+        }
+
+        // The app has no settings screen, and this is the only screen about the player themselves.
+        // It also earns its place at a demo: both palettes can be shown without leaving the app
+        // for the system settings.
+        item(key = "theme") {
+            SectionCard(title = "Giao diện") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ThemeMode.entries.forEach { mode ->
+                        ThemeChip(
+                            label = mode.label,
+                            selected = uiState.themeMode == mode,
+                            onClick = { viewModel.setThemeMode(mode) },
+                        )
+                    }
+                }
             }
         }
 
@@ -227,12 +254,6 @@ fun MyProfileScreen(
 private fun androidx.compose.foundation.lazy.LazyListScope.overviewTab(state: ProfileUiState) {
     val card = state.card ?: return
 
-    item(key = "level") {
-        SectionCard(title = "Cấp độ") {
-            LevelProgress(card)
-        }
-    }
-
     item(key = "pvp") {
         SectionCard(title = null) {
             PvpStatsBlock(card.pvp)
@@ -274,7 +295,7 @@ private fun LevelProgress(card: SelfProfileDto) {
             Text(
                 text = "Còn ${card.expToNextLevel} EXP tới Lv.${card.level + 1}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -284,7 +305,7 @@ private fun LevelProgress(card: SelfProfileDto) {
                 .fillMaxWidth()
                 .height(12.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Neutral050),
+                .background(MaterialTheme.colorScheme.surfaceContainer),
         ) {
             Box(
                 modifier = Modifier
@@ -307,7 +328,7 @@ private fun LevelProgress(card: SelfProfileDto) {
             Text(
                 text = "Đạt bậc $band ở cấp ${card.nextCefrAtLevel}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -358,7 +379,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statisticsTab(state: 
                     "nghe/nói/đọc/viết cần dữ liệu gắn nhãn kỹ năng cho từng câu hỏi — hệ thống " +
                     "chưa lưu điều đó.",
                 style = MaterialTheme.typography.bodySmall,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -367,12 +388,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statisticsTab(state: 
 @Composable
 private fun FigureRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Neutral600)
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.weight(1f))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = Neutral700,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -448,7 +469,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.wardrobeTab(state: Pr
                 Text(
                     text = categoryLabel(category),
                     style = MaterialTheme.typography.titleSmall,
-                    color = Neutral700,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -463,7 +484,7 @@ private fun OwnedItemRow(item: ItemDto) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -471,7 +492,7 @@ private fun OwnedItemRow(item: ItemDto) {
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.titleSmall,
-                color = Neutral700,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Text(
@@ -484,7 +505,7 @@ private fun OwnedItemRow(item: ItemDto) {
             Text(
                 text = "x${item.quantity}",
                 style = MaterialTheme.typography.labelLarge,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -539,7 +560,7 @@ private fun SectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(16.dp),
     ) {
         if (title != null) {
@@ -547,7 +568,7 @@ private fun SectionCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Neutral700,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
                 if (trailing != null) {
@@ -565,9 +586,26 @@ private fun SectionCard(
     }
 }
 
+/** One of the three palette choices. Same shape as the leaderboard's scope chips, on purpose. */
+@Composable
+private fun ThemeChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(
+                if (selected) Sky500 else MaterialTheme.colorScheme.surfaceContainerHighest,
+            )
+            .clickable(onClickLabel = "Chọn giao diện $label", onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    )
+}
+
 @Composable
 private fun EmptyNote(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = Neutral500)
+    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable

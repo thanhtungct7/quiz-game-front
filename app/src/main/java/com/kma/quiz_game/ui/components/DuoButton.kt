@@ -30,10 +30,6 @@ import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Green600
 import com.kma.quiz_game.ui.theme.Indigo500
 import com.kma.quiz_game.ui.theme.Indigo600
-import com.kma.quiz_game.ui.theme.Neutral100
-import com.kma.quiz_game.ui.theme.Neutral200
-import com.kma.quiz_game.ui.theme.Neutral400
-import com.kma.quiz_game.ui.theme.Neutral600
 import com.kma.quiz_game.ui.theme.Quiz_gameTheme
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Rose600
@@ -47,14 +43,36 @@ enum class DuoButtonSize { Default, Small, Large, Pill }
 
 private data class DuoButtonColors(val background: Color, val shadow: Color, val content: Color, val border: Color? = null)
 
-private fun colorsFor(variant: DuoButtonVariant): DuoButtonColors = when (variant) {
-    DuoButtonVariant.Primary -> DuoButtonColors(Green500, Green600, Color.White)
-    DuoButtonVariant.Secondary -> DuoButtonColors(Sky500, Sky600, Color.White)
-    DuoButtonVariant.Danger -> DuoButtonColors(Rose500, Rose600, Color.White)
-    DuoButtonVariant.Super -> DuoButtonColors(Indigo500, Indigo600, Color.White)
-    DuoButtonVariant.Locked -> DuoButtonColors(Neutral200, Neutral400, Neutral600)
-    DuoButtonVariant.Outline -> DuoButtonColors(Color.White, Neutral200, Neutral600, border = Neutral200)
-    DuoButtonVariant.DangerOutline -> DuoButtonColors(Color.White, Rose500, Rose500, border = Rose500)
+/**
+ * The four solid variants keep their brand colour in both themes: a green "TIẾP TỤC" is the app's
+ * signature, and a dark background does not make it a different button.
+ *
+ * The three that were drawn *on white* read from the theme instead. `Color.White` as a button face
+ * was the one place the fixed palette was simply wrong -- in dark mode an Outline button was a
+ * white slab with grey text on it.
+ */
+@Composable
+private fun colorsFor(variant: DuoButtonVariant): DuoButtonColors {
+    val scheme = MaterialTheme.colorScheme
+    return when (variant) {
+        DuoButtonVariant.Primary -> DuoButtonColors(Green500, Green600, Color.White)
+        DuoButtonVariant.Secondary -> DuoButtonColors(Sky500, Sky600, Color.White)
+        DuoButtonVariant.Danger -> DuoButtonColors(Rose500, Rose600, Color.White)
+        DuoButtonVariant.Super -> DuoButtonColors(Indigo500, Indigo600, Color.White)
+        DuoButtonVariant.Locked -> DuoButtonColors(
+            background = scheme.surfaceContainerHighest,
+            shadow = scheme.outline,
+            content = scheme.onSurfaceVariant,
+        )
+        DuoButtonVariant.Outline -> DuoButtonColors(
+            background = scheme.surface,
+            shadow = scheme.outline,
+            content = scheme.onSurface,
+            border = scheme.outline,
+        )
+        DuoButtonVariant.DangerOutline ->
+            DuoButtonColors(scheme.surface, Rose500, Rose500, border = Rose500)
+    }
 }
 
 private fun heightFor(size: DuoButtonSize): Dp = when (size) {
@@ -97,7 +115,7 @@ fun DuoButton(
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .clip(shape)
-                .background(if (enabled) colors.shadow else Neutral100)
+                .background(if (enabled) colors.shadow else MaterialTheme.colorScheme.surfaceContainerHigh)
         )
         Box(
             modifier = Modifier
@@ -105,7 +123,7 @@ fun DuoButton(
                 .height(height)
                 .offset(y = if (pressed && enabled) shadowDepth else 0.dp)
                 .clip(shape)
-                .background(if (enabled) colors.background else Neutral200)
+                .background(if (enabled) colors.background else MaterialTheme.colorScheme.surfaceContainerHighest)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -114,13 +132,14 @@ fun DuoButton(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            CompositionLocalProvider(LocalContentColor provides if (enabled) colors.content else Neutral400) {
+            val disabledContent = MaterialTheme.colorScheme.outline
+            CompositionLocalProvider(LocalContentColor provides if (enabled) colors.content else disabledContent) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     leadingIcon?.invoke()
                     Text(
                         text = text.uppercase(),
                         style = MaterialTheme.typography.labelLarge,
-                        color = if (enabled) colors.content else Neutral400,
+                        color = if (enabled) colors.content else disabledContent,
                     )
                 }
             }

@@ -2,6 +2,7 @@ package com.kma.quiz_game.ui.screens.learn
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kma.quiz_game.data.local.SettingsStore
 import com.kma.quiz_game.data.remote.dto.CourseMonsterDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressStatusDto
@@ -26,6 +27,7 @@ class LearnViewModel(
     private val battleRepository: BattleRepository,
     private val profileRepository: ProfileRepository,
     private val gameRepository: GameRepository,
+    private val settingsStore: SettingsStore,
 ) : ViewModel() {
 
     /** Cache-first: whatever was stored on the last run is on screen before any request goes out. */
@@ -65,7 +67,10 @@ class LearnViewModel(
         // The header strip's level and band. Shared with the profile tab through the repositories,
         // so a level gained mid-session shows up here without this screen asking again.
         standing,
-    ) { (units, hasTree), syncing, error, (card, game) ->
+        // Fifth and last: `combine`'s typed overload stops at five, and this is the cheapest of
+        // them -- one boolean off DataStore, which is also what dismissing the dialog writes.
+        settingsStore.hasSeenLearnIntro,
+    ) { (units, hasTree), syncing, error, (card, game), introSeen ->
         LearnUiState(
             isLoading = !hasTree && syncing,
             isSyncing = syncing,
@@ -75,9 +80,20 @@ class LearnViewModel(
             cefr = card?.cefr.orEmpty(),
             dayStreak = card?.dayStreak ?: 0,
             pendingBenchmarkLevel = game?.pendingBenchmarkLevel,
+            showIntro = !introSeen && hasTree,
             errorMessage = error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LearnUiState())
+
+    /**
+     * The one-off header explanation has been read.
+     *
+     * Written to the store rather than to local state: the flow above is what clears the dialog,
+     * so there is one source of truth and a second screen cannot disagree with it.
+     */
+    fun dismissIntro() {
+        viewModelScope.launch { settingsStore.markLearnIntroSeen() }
+    }
 
     /**
      * Revalidate the cached path and reload progress.

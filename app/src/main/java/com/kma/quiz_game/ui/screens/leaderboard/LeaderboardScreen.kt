@@ -48,10 +48,7 @@ import com.kma.quiz_game.ui.components.game.TierBadge
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.screens.profile.PublicProfileSheet
 import com.kma.quiz_game.ui.theme.Green500
-import com.kma.quiz_game.ui.theme.Neutral050
 import com.kma.quiz_game.ui.theme.Neutral100
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Sky500
 
@@ -145,7 +142,7 @@ private fun ScopeTabs(scope: String, seasonCode: String?, onSelect: (String) -> 
                 "Điểm tích luỹ, không bao giờ bị reset"
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 6.dp),
         )
     }
@@ -156,10 +153,10 @@ private fun ScopeChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelLarge,
-        color = if (selected) Color.White else Neutral700,
+        color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(if (selected) Sky500 else Neutral100)
+            .background(if (selected) Sky500 else MaterialTheme.colorScheme.surfaceContainerHighest)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
@@ -208,7 +205,7 @@ private fun LeaderboardList(
                 color = Green500,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Neutral050)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .padding(20.dp),
                 textAlign = TextAlign.Center,
             )
@@ -291,7 +288,7 @@ private fun LeaderboardRow(
     onClick: () -> Unit,
 ) {
     Surface(
-        color = if (isMe) Green500.copy(alpha = 0.12f) else Neutral050,
+        color = if (isMe) Green500.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -304,7 +301,7 @@ private fun LeaderboardRow(
             Text(
                 text = "${entry.rank}",
                 style = MaterialTheme.typography.titleMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(36.dp),
             )
             UserAvatar(entry.userId, entry.username, entry.avatarUrl, size = 36.dp)
@@ -313,7 +310,7 @@ private fun LeaderboardRow(
                 Text(
                     text = entry.username ?: "Người chơi",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Neutral700,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -323,7 +320,7 @@ private fun LeaderboardRow(
                     Text(
                         text = "${entry.matchesPlayed} trận · ${entry.wins} thắng",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Neutral500,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -356,7 +353,7 @@ private fun LeaderboardMessage(
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyLarge,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))

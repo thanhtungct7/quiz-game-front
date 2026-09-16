@@ -41,11 +41,6 @@ import com.kma.quiz_game.ui.components.game.effectSymbol
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Indigo500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral100
-import com.kma.quiz_game.ui.theme.Neutral200
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.ShapeXl
 
@@ -93,7 +88,7 @@ fun LoadoutScreen(
                 Text(
                     text = "Bạn chưa sở hữu kỹ năng nào.",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Neutral700,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(8.dp))
                 DuoButton(text = "Mở cây kỹ năng", onClick = onOpenSkillTree)
@@ -160,10 +155,10 @@ private fun SlotRow(selected: List<SkillNodeDto>, onRemove: (SkillNodeDto) -> Un
                     .weight(1f)
                     .height(84.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (node == null) Neutral100 else Neutral050)
+                    .background(if (node == null) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainer)
                     .border(
                         width = 2.dp,
-                        color = if (node == null) Neutral200 else Indigo500,
+                        color = if (node == null) MaterialTheme.colorScheme.outline else Indigo500,
                         shape = RoundedCornerShape(12.dp),
                     )
                     .clickable(enabled = node != null) { node?.let(onRemove) }
@@ -172,13 +167,13 @@ private fun SlotRow(selected: List<SkillNodeDto>, onRemove: (SkillNodeDto) -> Un
                 verticalArrangement = Arrangement.Center,
             ) {
                 if (node == null) {
-                    Text(text = "Ô trống", style = MaterialTheme.typography.bodyMedium, color = Neutral500)
+                    Text(text = "Ô trống", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     Text(text = effectSymbol(node.effect), fontSize = 20.sp)
                     Text(
                         text = node.name,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Neutral700,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -205,10 +200,10 @@ private fun OwnedSkillRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(ShapeXl)
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 2.dp,
-                color = if (isSelected) Indigo500 else Neutral200,
+                color = if (isSelected) Indigo500 else MaterialTheme.colorScheme.outline,
                 shape = ShapeXl,
             )
             .clickable(enabled = !isBlocked, onClick = onClick)
@@ -221,13 +216,13 @@ private fun OwnedSkillRow(
             Text(
                 text = node.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (isBlocked) Neutral500 else Neutral700,
+                color = if (isBlocked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "${node.manaCost} mana · ${effectDescription(node.effect)}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (isSelected) {

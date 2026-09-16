@@ -30,5 +30,13 @@ data class LearnUiState(
      * experience bar fill and their level never move, with nothing on screen saying why.
      */
     val pendingBenchmarkLevel: Int? = null,
+    /**
+     * Whether to show the one-off explanation of the header strip.
+     *
+     * True only for a learner who has never dismissed it *and* already has a path on screen: the
+     * dialog explains the chips above the path, so putting it over a spinner would explain
+     * something that is not drawn yet.
+     */
+    val showIntro: Boolean = false,
     val errorMessage: String? = null,
 )

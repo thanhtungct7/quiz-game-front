@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.ui.AppViewModelFactory
 import com.kma.quiz_game.ui.components.DuoButton
+import com.kma.quiz_game.ui.components.LearnIntroDialog
 import com.kma.quiz_game.ui.components.LessonNodeStatus
 import com.kma.quiz_game.ui.components.LessonPath
 import com.kma.quiz_game.ui.components.PracticeDialog
@@ -115,6 +116,12 @@ fun LearnScreen(
                 }
             }
         }
+    }
+
+    // Ahead of the practice dialog: a first-run learner has completed nothing, so the two can
+    // never be up together -- but if that ever changed, the one explaining the screen should win.
+    if (uiState.showIntro) {
+        LearnIntroDialog(onDismiss = viewModel::dismissIntro)
     }
 
     practiceLessonId?.let { lessonId ->

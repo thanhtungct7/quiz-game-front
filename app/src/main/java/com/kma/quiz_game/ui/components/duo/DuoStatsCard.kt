@@ -21,9 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kma.quiz_game.data.remote.dto.DuoStatsDto
 import com.kma.quiz_game.ui.theme.Green500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.Sky500
@@ -35,11 +32,11 @@ fun DuoStatsCard(stats: DuoStatsDto?, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = "Điểm xếp hạng", style = MaterialTheme.typography.bodyLarge, color = Neutral500)
+        Text(text = "Điểm xếp hạng", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             text = "${stats?.rating ?: DEFAULT_RATING}",
             fontSize = 44.sp,
@@ -57,7 +54,7 @@ fun DuoStatsCard(stats: DuoStatsDto?, modifier: Modifier = Modifier) {
         ) {
             StatCell("Thắng", "${stats?.wins ?: 0}", Green500)
             StatCell("Thua", "${stats?.losses ?: 0}", Rose500)
-            StatCell("Hoà", "${stats?.draws ?: 0}", Neutral500)
+            StatCell("Hoà", "${stats?.draws ?: 0}", MaterialTheme.colorScheme.onSurfaceVariant)
             StatCell("Tỉ lệ", "${stats?.winRate ?: 0.0}%", Sky500)
         }
 
@@ -67,7 +64,7 @@ fun DuoStatsCard(stats: DuoStatsDto?, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            StatCell("Số trận", "${stats?.matchesPlayed ?: 0}", Neutral700)
+            StatCell("Số trận", "${stats?.matchesPlayed ?: 0}", MaterialTheme.colorScheme.onSurface)
             StatCell("Chuỗi thắng", "${stats?.currentStreak ?: 0}", Orange400)
             StatCell("Kỷ lục", "${stats?.bestStreak ?: 0}", Orange400)
         }
@@ -80,6 +77,6 @@ private const val DEFAULT_RATING = 1000
 private fun StatCell(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = value, style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Bold)
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Neutral500)
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

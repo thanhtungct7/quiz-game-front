@@ -36,7 +36,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -93,6 +95,23 @@ fun BattleScreen(
     val state by viewModel.uiState.collectAsState()
     val session = state.session
     val now = rememberHudClock()
+
+    // One buzz per graded answer, fired for the whole screen rather than from each option card:
+    // grading turns the correct card CORRECT *and* the tapped one WRONG, so a haptic per card
+    // would fire twice for one answer.
+    //
+    // Keyed on the result's `token` -- the id of the question push it answers -- rather than on
+    // the result itself, so the same question coming round again in a later pool pass still
+    // buzzes instead of comparing equal to the answer before it and being skipped.
+    val haptics = LocalHapticFeedback.current
+    val graded = session.answerResult
+    LaunchedEffect(graded?.token) {
+        if (graded != null) {
+            haptics.performHapticFeedback(
+                if (graded.correct) HapticFeedbackType.Confirm else HapticFeedbackType.Reject,
+            )
+        }
+    }
 
     LaunchedEffect(session.phase) {
         when (session.phase) {

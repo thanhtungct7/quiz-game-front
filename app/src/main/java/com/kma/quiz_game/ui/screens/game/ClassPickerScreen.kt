@@ -35,10 +35,6 @@ import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Indigo500
-import com.kma.quiz_game.ui.theme.Neutral050
-import com.kma.quiz_game.ui.theme.Neutral200
-import com.kma.quiz_game.ui.theme.Neutral500
-import com.kma.quiz_game.ui.theme.Neutral700
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.ShapeXl
@@ -78,7 +74,7 @@ fun ClassPickerScreen(
         Text(
             text = "Trường phái quyết định máu, sát thương và mana khởi đầu của bạn trong mọi trận đấu.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
 
@@ -105,7 +101,7 @@ fun ClassPickerScreen(
                 text = "Đổi trường phái tốn $CLASS_CHANGE_COST vàng và xoá thanh kỹ năng đang trang bị. " +
                     "Kỹ năng đã mở khoá thì không mất.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
             Text(
@@ -119,7 +115,13 @@ fun ClassPickerScreen(
         state.errorMessage?.let { message ->
             Spacer(Modifier.height(12.dp))
             Text(text = message, color = Rose500, style = MaterialTheme.typography.bodyMedium)
-            TextButton(onClick = viewModel::dismissError) { Text("Đã hiểu") }
+            // "Tải lại" as well as "Đã hiểu", the same pair the shop and the wardrobe offer: the
+            // failure that lands here is a failed fetch, and dismissing it left the screen empty
+            // with no way back other than leaving the tab.
+            Row {
+                TextButton(onClick = viewModel::dismissError) { Text("Đã hiểu") }
+                TextButton(onClick = viewModel::load) { Text("Tải lại") }
+            }
         }
 
         if (onBack != null) {
@@ -159,10 +161,10 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Mo
     Column(
         modifier = modifier
             .clip(ShapeXl)
-            .background(Neutral050)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 2.dp,
-                color = if (gameClass.isCurrent) Green500 else Neutral200,
+                color = if (gameClass.isCurrent) Green500 else MaterialTheme.colorScheme.outline,
                 shape = ShapeXl,
             )
             .clickable(enabled = !gameClass.isCurrent, onClick = onClick)
@@ -181,14 +183,14 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Mo
         Text(
             text = gameClass.name,
             style = MaterialTheme.typography.titleMedium,
-            color = Neutral700,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
         )
         Text(
             text = gameClass.description,
             style = MaterialTheme.typography.bodySmall,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -215,7 +217,7 @@ private fun StatCell(label: String, value: String, color: androidx.compose.ui.gr
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = Neutral500,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,

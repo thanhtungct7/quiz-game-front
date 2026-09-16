@@ -134,10 +134,16 @@ fun rememberOptionAudioPlayer(): OptionAudioPlayer {
     return player
 }
 
-/** Plays a word. A touch target of its own, so listening to an option never selects it. */
+/**
+ * Plays a word. A touch target of its own, so listening to an option never selects it.
+ *
+ * 48dp because that is the smallest target Material considers reachable, and this one sits inside
+ * an option the player is trying *not* to hit. The glyph stays at 20dp, so the button grew without
+ * the icon getting louder.
+ */
 @Composable
 fun SpeakerButton(onClick: () -> Unit, tint: Color, modifier: Modifier = Modifier) {
-    IconButton(onClick = onClick, modifier = modifier.size(36.dp)) {
+    IconButton(onClick = onClick, modifier = modifier.size(48.dp)) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.VolumeUp,
             contentDescription = "Nghe phát âm",
