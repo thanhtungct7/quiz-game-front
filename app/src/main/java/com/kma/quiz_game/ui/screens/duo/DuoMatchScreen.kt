@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -108,7 +109,8 @@ fun DuoMatchScreen(
 
     BackHandler { viewModel.setExitDialogVisible(true) }
 
-    Box(modifier = modifier.fillMaxSize().background(BattleTheme.Night)) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(BattleTheme.Night)) {
+        val stageHeight = maxHeight * STAGE_FRACTION
         Column(modifier = Modifier.fillMaxSize()) {
             TopBar(
                 session = session,
@@ -131,7 +133,7 @@ fun DuoMatchScreen(
             )
 
             // The stage. Nothing is drawn over it except what the last cast did.
-            Box(modifier = Modifier.weight(STAGE_WEIGHT).fillMaxWidth()) {
+            Box(modifier = Modifier.height(stageHeight).fillMaxWidth()) {
                 ArenaSurface(bridge = viewModel.arena, modifier = Modifier.fillMaxSize())
                 CastFeed(
                     session = session,
@@ -141,7 +143,7 @@ fun DuoMatchScreen(
 
             Column(
                 modifier = Modifier
-                    .weight(PANEL_WEIGHT)
+                    .weight(1f)
                     .fillMaxWidth()
                     .clip(BattleTheme.PanelShape)
                     .background(BattleTheme.panelBrush)
@@ -623,9 +625,8 @@ private fun clockLabel(session: DuoSession, localNowMs: Long): String {
 /** Long enough to watch the final blow land, short enough not to feel like a stall. */
 private const val RESULT_HANDOVER_MILLIS = 800L
 
-/** The stage gets a little less than PvE's: there are two decks to keep an eye on above it. */
-private const val STAGE_WEIGHT = 0.38f
-private const val PANEL_WEIGHT = 0.62f
+/** The stage takes a third of the screen; the question panel gets the rest. */
+private const val STAGE_FRACTION = 1f / 3f
 private const val HUD_TICK_MS = 100L
 /** Matches the arena's lunge-advance time, so a bar drains at the moment the blow lands. */
 private const val IMPACT_DELAY_MS = 180

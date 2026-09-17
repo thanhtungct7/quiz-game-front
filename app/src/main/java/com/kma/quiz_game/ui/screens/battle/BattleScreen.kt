@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -128,7 +129,8 @@ fun BattleScreen(
 
     BackHandler { viewModel.setExitDialogVisible(true) }
 
-    Box(modifier = modifier.fillMaxSize().background(BattleTheme.Night)) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(BattleTheme.Night)) {
+        val stageHeight = maxHeight * STAGE_FRACTION
         Column(modifier = Modifier.fillMaxSize()) {
             TopBar(
                 session = session,
@@ -137,7 +139,7 @@ fun BattleScreen(
             MonsterHeader(session = session)
 
             // The stage. Nothing is drawn over it except the warning of what the cast will cost.
-            Box(modifier = Modifier.weight(STAGE_WEIGHT).fillMaxWidth()) {
+            Box(modifier = Modifier.height(stageHeight).fillMaxWidth()) {
                 ArenaSurface(bridge = viewModel.arena, modifier = Modifier.fillMaxSize())
                 SwingWarning(
                     session = session,
@@ -147,7 +149,7 @@ fun BattleScreen(
 
             Column(
                 modifier = Modifier
-                    .weight(PANEL_WEIGHT)
+                    .weight(1f)
                     .fillMaxWidth()
                     .clip(BattleTheme.PanelShape)
                     .background(BattleTheme.panelBrush)
@@ -414,11 +416,15 @@ private fun QuestionBody(
     // A REMOVE_OPTIONS skill hides wrong options from the caster, for this question only.
     val options = question.options.filter { it.id !in session.removedOptionIds }
 
+    // Building a sentence needs the prompt, the answer lines, the bank and the check button on
+    // screen at once -- scrolling between them mid-answer loses the prompt -- so that one runs tight.
+    val ordering = question.type == ChallengeTypeDto.ORDER
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = if (ordering) 10.dp else 16.dp),
     ) {
         question.passage?.let { passage ->
             Text(
@@ -442,16 +448,20 @@ private fun QuestionBody(
         } else {
             Text(
                 text = question.question,
-                style = MaterialTheme.typography.headlineSmall,
+                style = if (ordering) {
+                    MaterialTheme.typography.titleMedium
+                } else {
+                    MaterialTheme.typography.headlineSmall
+                },
                 color = BattleTheme.Parchment,
                 fontWeight = FontWeight.Bold,
             )
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(if (ordering) 10.dp else 16.dp))
 
         val audio = rememberOptionAudioPlayer()
 
-        if (question.type == ChallengeTypeDto.ORDER) {
+        if (ordering) {
             // The sentence is the answer, so the whole word bank is the surface -- there is no
             // grid of options to draw and no single option to select.
             BattleSentenceBuilder(
@@ -605,9 +615,8 @@ private fun poolLabel(session: BattleSession): String = when {
     else -> "${session.questionsInPool} câu"
 }
 
-/** The stage gets more of the screen than the old arena strip: there are two fighters to see. */
-private const val STAGE_WEIGHT = 0.42f
-private const val PANEL_WEIGHT = 0.58f
+/** The stage takes a third of the screen; the question panel gets the rest. */
+private const val STAGE_FRACTION = 1f / 3f
 private const val HUD_TICK_MS = 100L
 /** Matches the arena's lunge-advance time, so a bar drains at the moment the blow lands. */
 private const val IMPACT_DELAY_MS = 180

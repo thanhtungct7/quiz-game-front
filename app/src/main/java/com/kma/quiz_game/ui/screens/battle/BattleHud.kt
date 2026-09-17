@@ -400,7 +400,7 @@ fun BattleSentenceBuilder(
     }
     val complete = placedIds.size == tiles.size && tiles.isNotEmpty()
 
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(modifier = Modifier.fillMaxWidth()) {
             // The ruled lines, behind the words: drawn at exactly one word's height apiece, so a
             // word laid down lands on a line instead of floating between two.
@@ -439,7 +439,7 @@ fun BattleSentenceBuilder(
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(SENTENCE_LINE_GAP),
         ) {
             tiles.forEach { tile ->
                 val used = tile.id in placedIds
@@ -480,7 +480,7 @@ private fun BattleCheckButton(enabled: Boolean, onClick: () -> Unit, modifier: M
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .height(44.dp)
             .clip(BattleTheme.TileShape)
             .background(if (enabled) BattleTheme.tileLitBrush else BattleTheme.tileBrush)
             .border(2.dp, if (enabled) BattleTheme.Gold else BattleTheme.Edge, BattleTheme.TileShape)
@@ -522,16 +522,16 @@ private fun BattleWordChip(
                 enabled = enabled,
                 onClick = onClick,
             )
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = text, style = MaterialTheme.typography.titleMedium, color = contentColor)
+        Text(text = text, style = MaterialTheme.typography.bodyLarge, color = contentColor)
     }
 }
 
 /** One word tile, and the ruled line it sits on: the line is a word tall plus the gap under it. */
-private val SENTENCE_WORD_HEIGHT = 44.dp
-private val SENTENCE_LINE_GAP = 8.dp
+private val SENTENCE_WORD_HEIGHT = 38.dp
+private val SENTENCE_LINE_GAP = 6.dp
 private val SENTENCE_LINE_HEIGHT = SENTENCE_WORD_HEIGHT + SENTENCE_LINE_GAP
 
 /** How many lines the answer is ruled for. Two holds the longest sentence in the bank. */
