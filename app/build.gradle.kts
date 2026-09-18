@@ -148,6 +148,7 @@ dependencies {
         gdxNatives(variantOf(libs.gdx.platform) { classifier("natives-$abi") })
     }
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No streak yet, or nobody signed in: the brand green (Green500/Green700), which is what every
+     "start" button in the app is. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="24dp" />
+    <gradient
+        android:angle="270"
+        android:endColor="#3F8F00"
+        android:startColor="#58CC02"
+        android:type="linear" />
+</shape>

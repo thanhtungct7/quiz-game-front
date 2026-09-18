@@ -20,6 +20,7 @@ import com.kma.quiz_game.data.remote.dto.DuoStatsDto
 import com.kma.quiz_game.data.remote.dto.LeaderboardScope
 import com.kma.quiz_game.data.remote.dto.MatchFinishedDto
 import com.kma.quiz_game.data.remote.dto.OpponentAnsweredDto
+import com.kma.quiz_game.data.widget.WidgetSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -196,6 +197,7 @@ class DuoRepository(
     private val duoApi: DuoApi,
     private val socket: DuoSocket,
     private val json: Json,
+    private val widgetSync: WidgetSync,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val _session = MutableStateFlow(DuoSession())
@@ -203,7 +205,14 @@ class DuoRepository(
 
     init {
         scope.launch {
-            socket.events.collect { event -> _session.update { reduce(it, event) } }
+            socket.events.collect { event ->
+                _session.update { reduce(it, event) }
+                // Both modes settle through the same daily streak, so a match counts for the
+                // home-screen widget exactly as a lesson battle does.
+                if (event is DuoEvent.MatchFinished) {
+                    event.data.streak?.let { widgetSync.onSettlement(it.dayStreak, it.bestDayStreak) }
+                }
+            }
         }
     }
 

@@ -17,6 +17,7 @@ import com.kma.quiz_game.data.remote.dto.MonsterCatalogDto
 import com.kma.quiz_game.data.remote.dto.MonsterDto
 import com.kma.quiz_game.data.remote.dto.MonsterPreviewDto
 import com.kma.quiz_game.data.remote.dto.MonsterSwingDto
+import com.kma.quiz_game.data.widget.WidgetSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -145,6 +146,7 @@ data class BattleSession(
 class BattleRepository(
     private val battleApi: BattleApi,
     private val socket: BattleSocket,
+    private val widgetSync: WidgetSync,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val _session = MutableStateFlow(BattleSession())
@@ -174,6 +176,12 @@ class BattleRepository(
                 // The fight is open; nothing is waiting to be given up on any more.
                 if (event is BattleEvent.Started) cancelStartWatchdog()
                 _session.update { reduce(it, event) }
+                // A finished fight is the first-hand evidence that today has been studied, which
+                // is what lets the home-screen widget stop asking for a lesson the moment the
+                // result screen appears -- see WidgetSync.onSettlement.
+                if (event is BattleEvent.Finished) {
+                    event.data.streak?.let { widgetSync.onSettlement(it.dayStreak, it.bestDayStreak) }
+                }
             }
         }
     }

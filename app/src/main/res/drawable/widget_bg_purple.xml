@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's card. A drawable rather than a Glance background colour because the gradient is
+     what makes it read as a card on any wallpaper; the corner radius matches the one the system
+     rounds widgets to on Android 12+, so a launcher that clips and one that does not look alike. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="24dp" />
+    <gradient
+        android:angle="270"
+        android:endColor="#6B2FB5"
+        android:startColor="#A568F5"
+        android:type="linear" />
+</shape>

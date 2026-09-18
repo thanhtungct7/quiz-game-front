@@ -8,6 +8,7 @@ import com.kma.quiz_game.data.remote.dto.PublicProfileDto
 import com.kma.quiz_game.data.remote.dto.SelfProfileDto
 import com.kma.quiz_game.data.remote.dto.UpdateProfileRequest
 import com.kma.quiz_game.data.remote.dto.UserRead
+import com.kma.quiz_game.data.widget.WidgetSync
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +35,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 class ProfileRepository(
     private val usersApi: UsersApi,
     private val profileApi: ProfileApi,
+    /** Where the home-screen widget's snapshot is written from. The card is the only request that
+     * carries the streak, level and band the widget draws, so every refresh of it is also the
+     * widget's chance to stop being stale. */
+    private val widgetSync: WidgetSync,
 ) {
 
     private val _profile = MutableStateFlow<UserRead?>(null)
@@ -47,7 +52,10 @@ class ProfileRepository(
     }
 
     suspend fun refreshSelfProfile(): Result<SelfProfileDto> = runCatching {
-        profileApi.getMyProfile().also { _selfProfile.value = it }
+        profileApi.getMyProfile().also {
+            _selfProfile.value = it
+            widgetSync.onCard(it)
+        }
     }
 
     /**
