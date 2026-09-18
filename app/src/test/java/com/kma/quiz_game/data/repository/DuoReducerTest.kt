@@ -19,7 +19,6 @@ import com.kma.quiz_game.data.remote.dto.MatchFoundDto
 import com.kma.quiz_game.data.remote.dto.MatchOutcome
 import com.kma.quiz_game.data.remote.dto.MatchResumeDto
 import com.kma.quiz_game.data.remote.dto.MatchStartedDto
-import com.kma.quiz_game.data.remote.dto.OpponentAnsweredDto
 import com.kma.quiz_game.data.remote.dto.OpponentDisconnectedDto
 import com.kma.quiz_game.data.remote.dto.QuestionPushDto
 import com.kma.quiz_game.data.remote.dto.QueueWaitingDto

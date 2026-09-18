@@ -12,7 +12,6 @@ val Green900 = Color(0xFF1F3D00)
 // Secondary blue (assist bubbles, links, energy)
 val Sky100 = Color(0xFFDDF4FF)
 val Sky900 = Color(0xFF0B3A52)
-val Sky400 = Color(0xFF2B70C9)
 val Sky500 = Color(0xFF1CB0F6)
 val Sky600 = Color(0xFF1899D6)
 
