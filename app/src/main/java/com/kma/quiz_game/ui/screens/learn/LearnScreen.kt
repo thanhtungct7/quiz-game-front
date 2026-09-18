@@ -7,8 +7,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +46,7 @@ import com.kma.quiz_game.ui.rememberAppViewModelFactory
 fun LearnScreen(
     onLessonClick: (String) -> Unit,
     onStartBenchmark: (Int) -> Unit,
+    onOpenConversation: () -> Unit,
     factory: AppViewModelFactory = rememberAppViewModelFactory(),
     viewModel: LearnViewModel = viewModel(factory = factory),
 ) {
@@ -93,6 +98,12 @@ fun LearnScreen(
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
+            }
+            item(key = "conversation") {
+                ConversationBanner(
+                    onOpen = onOpenConversation,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
             items(uiState.units) { unit ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -166,6 +177,35 @@ private fun BenchmarkBanner(capLevel: Int, onStart: () -> Unit, modifier: Modifi
                 style = MaterialTheme.typography.bodyMedium,
             )
             DuoButton(text = "Vào thi", onClick = onStart)
+        }
+    }
+}
+
+/** The way into AI conversation practice: everyday English, away from the lesson path. */
+@Composable
+private fun ConversationBanner(onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        onClick = onOpen,
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Icon(Icons.Filled.Forum, contentDescription = null, modifier = Modifier.size(36.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Luyện hội thoại với AI", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Gọi đồ, hỏi đường, phỏng vấn... nói tiếng Anh và nhận nhận xét.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
         }
     }
 }

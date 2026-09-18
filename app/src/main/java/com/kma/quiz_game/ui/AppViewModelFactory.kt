@@ -5,6 +5,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kma.quiz_game.DuoGameApplication
+import com.kma.quiz_game.ui.screens.conversation.ConversationHistoryViewModel
+import com.kma.quiz_game.ui.screens.conversation.ConversationTopicsViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoHistoryViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoHomeViewModel
 import com.kma.quiz_game.ui.screens.duo.DuoMatchViewModel
@@ -62,6 +64,12 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
             InventoryViewModel::class.java -> InventoryViewModel(app.gameRepository) as T
 
             ShopViewModel::class.java -> ShopViewModel(app.gameRepository) as T
+
+            ConversationTopicsViewModel::class.java ->
+                ConversationTopicsViewModel(app.conversationRepository) as T
+
+            ConversationHistoryViewModel::class.java ->
+                ConversationHistoryViewModel(app.conversationRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
         }

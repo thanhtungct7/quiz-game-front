@@ -49,6 +49,26 @@ object NetworkModule {
     }
 
     /**
+     * [authenticated] with room for an AI call to finish.
+     *
+     * The server gives the AI provider 30 seconds and retries once, so a reply can legitimately take
+     * a minute; the 15-second read timeout would give up on a conversation turn the server is still
+     * going to answer -- and store.
+     *
+     * Derived from the authenticated client rather than built anew so the two share one
+     * [AuthInterceptor]: its lock is what keeps concurrent 401s to a single token refresh, and a
+     * second interceptor would race the first with a refresh token that has already rotated.
+     */
+    fun buildAiRetrofit(authenticated: Retrofit): Retrofit {
+        val client = (authenticated.callFactory() as OkHttpClient).newBuilder()
+            .readTimeout(AI_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+        return retrofit(client)
+    }
+
+    private const val AI_READ_TIMEOUT_SECONDS = 75L
+
+    /**
      * A separate client for the duo match socket.
      *
      * The 15-second read timeout above would kill a socket that is merely idle -- waiting in the

@@ -3,6 +3,7 @@ package com.kma.quiz_game
 import android.app.Application
 import com.kma.quiz_game.data.local.AppDatabase
 import com.kma.quiz_game.data.local.SettingsStore
+import com.kma.quiz_game.data.local.WidgetStateStore
 import com.kma.quiz_game.data.push.NotificationChannels
 import com.kma.quiz_game.data.push.PushRepository
 import com.kma.quiz_game.data.remote.BattleSocket
@@ -13,6 +14,7 @@ import com.kma.quiz_game.data.remote.TokenStore
 import com.kma.quiz_game.data.remote.api.AuthApi
 import com.kma.quiz_game.data.remote.api.BattleApi
 import com.kma.quiz_game.data.remote.api.ContentApi
+import com.kma.quiz_game.data.remote.api.ConversationApi
 import com.kma.quiz_game.data.remote.api.DuoApi
 import com.kma.quiz_game.data.remote.api.GameApi
 import com.kma.quiz_game.data.remote.api.NotificationsApi
@@ -21,10 +23,12 @@ import com.kma.quiz_game.data.remote.api.ProgressApi
 import com.kma.quiz_game.data.remote.api.UsersApi
 import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.BattleRepository
+import com.kma.quiz_game.data.repository.ConversationRepository
 import com.kma.quiz_game.data.repository.DuoRepository
 import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
+import com.kma.quiz_game.data.widget.WidgetSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,6 +44,11 @@ class DuoGameApplication : Application() {
     /** Public, unlike [tokenStore]: the activity reads the theme before any screen exists, and the
      * profile screen writes it. Survives logout on purpose -- see [SettingsStore]. */
     val settingsStore: SettingsStore by lazy { SettingsStore(this) }
+
+    /** What the home-screen widget draws, and the only writer of it. Cleared on logout, unlike
+     * [settingsStore]: a streak is the account's, not the install's. */
+    private val widgetStateStore: WidgetStateStore by lazy { WidgetStateStore(this) }
+    private val widgetSync: WidgetSync by lazy { WidgetSync(this, widgetStateStore) }
 
     // Unauthenticated -- carries no AuthInterceptor, so AuthApi.refresh() never recurses.
     private val authRetrofit by lazy { NetworkModule.buildAuthRetrofit() }
@@ -58,7 +67,9 @@ class DuoGameApplication : Application() {
 
     /** Owns both the account (name, bio, avatar) and the aggregated card the RPG profile and the
      * public modal draw. See [ProfileRepository] for why the two live together. */
-    val profileRepository: ProfileRepository by lazy { ProfileRepository(usersApi, profileApi) }
+    val profileRepository: ProfileRepository by lazy {
+        ProfileRepository(usersApi, profileApi, widgetSync)
+    }
 
     val learnRepository: LearnRepository by lazy {
         LearnRepository(contentApi, progressApi, database.courseContentDao())
@@ -86,7 +97,7 @@ class DuoGameApplication : Application() {
     }
 
     val duoRepository: DuoRepository by lazy {
-        DuoRepository(duoApi, duoSocket, NetworkModule.json)
+        DuoRepository(duoApi, duoSocket, NetworkModule.json, widgetSync)
     }
 
     private val battleApi: BattleApi by lazy { authenticatedRetrofit.create(BattleApi::class.java) }
@@ -102,7 +113,16 @@ class DuoGameApplication : Application() {
         )
     }
 
-    val battleRepository: BattleRepository by lazy { BattleRepository(battleApi, battleSocket) }
+    val battleRepository: BattleRepository by lazy {
+        BattleRepository(battleApi, battleSocket, widgetSync)
+    }
+
+    /** Its own Retrofit: an AI reply can outlast the REST stack's 15-second read timeout. */
+    private val conversationApi: ConversationApi by lazy {
+        NetworkModule.buildAiRetrofit(authenticatedRetrofit).create(ConversationApi::class.java)
+    }
+
+    val conversationRepository: ConversationRepository by lazy { ConversationRepository(conversationApi) }
 
     private val notificationsApi: NotificationsApi by lazy {
         authenticatedRetrofit.create(NotificationsApi::class.java)
@@ -134,5 +154,9 @@ class DuoGameApplication : Application() {
         authRepository.logout()
         profileRepository.clear()
         gameRepository.clear()
+        // Last, and after the session is gone: the widget is the one piece of this account left on
+        // screen once the app is closed, and it must not keep showing the streak of whoever just
+        // signed out.
+        widgetSync.onSignedOut()
     }
 }

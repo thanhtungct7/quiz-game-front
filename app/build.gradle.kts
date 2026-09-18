@@ -135,6 +135,7 @@ dependencies {
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.google.play.services.auth)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)

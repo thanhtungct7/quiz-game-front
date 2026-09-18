@@ -89,6 +89,20 @@ sealed interface Destination {
     @Serializable
     data class BenchmarkExam(val capLevel: Int) : Destination
 
+    /** AI conversation practice: the scenarios to choose from. Reached from the Learn tab. */
+    @Serializable
+    data object ConversationTopics : Destination
+
+    @Serializable
+    data object ConversationHistory : Destination
+
+    /** Full screen: the keyboard needs the room the bottom bar would take. */
+    @Serializable
+    data class ConversationChat(val sessionId: String) : Destination
+
+    @Serializable
+    data class ConversationFeedback(val sessionId: String) : Destination
+
     @Serializable
     data object Login : Destination
 

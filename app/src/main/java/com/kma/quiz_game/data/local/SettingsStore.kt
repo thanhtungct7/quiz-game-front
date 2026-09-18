@@ -56,6 +56,7 @@ class SettingsStore(private val context: Context) {
     private object Keys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val LEARN_INTRO_SEEN = booleanPreferencesKey("learn_intro_seen")
+        val CONVERSATION_VOICE_ON = booleanPreferencesKey("conversation_voice_on")
     }
 
     val themeMode: Flow<ThemeMode> =
@@ -77,5 +78,16 @@ class SettingsStore(private val context: Context) {
 
     suspend fun markLearnIntroSeen() {
         context.settingsDataStore.edit { prefs -> prefs[Keys.LEARN_INTRO_SEEN] = true }
+    }
+
+    /**
+     * Whether the AI reads its lines aloud in a practice conversation. On unless the learner has
+     * muted it -- somewhere quiet, say -- and it stays muted until they turn it back on.
+     */
+    val conversationVoiceOn: Flow<Boolean> =
+        context.settingsDataStore.data.map { it[Keys.CONVERSATION_VOICE_ON] != false }
+
+    suspend fun setConversationVoiceOn(on: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[Keys.CONVERSATION_VOICE_ON] = on }
     }
 }

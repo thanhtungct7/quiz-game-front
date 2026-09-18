@@ -25,7 +25,12 @@ import com.kma.quiz_game.DuoGameApplication
 import com.kma.quiz_game.data.push.PushRoute
 import com.kma.quiz_game.ui.screens.battle.BattleResultScreen
 import com.kma.quiz_game.ui.screens.battle.BattleScreen
+import com.kma.quiz_game.data.remote.dto.ConversationStatus
 import com.kma.quiz_game.ui.screens.benchmark.BenchmarkExamScreen
+import com.kma.quiz_game.ui.screens.conversation.ConversationChatScreen
+import com.kma.quiz_game.ui.screens.conversation.ConversationFeedbackScreen
+import com.kma.quiz_game.ui.screens.conversation.ConversationHistoryScreen
+import com.kma.quiz_game.ui.screens.conversation.ConversationTopicsScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHistoryScreen
 import com.kma.quiz_game.ui.screens.duo.DuoHomeScreen
 import com.kma.quiz_game.ui.screens.duo.DuoMatchDetailScreen
@@ -97,6 +102,61 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
                     onLessonClick = { lessonId -> navController.navigate(Destination.Battle(lessonId)) },
                     onStartBenchmark = { capLevel ->
                         navController.navigate(Destination.BenchmarkExam(capLevel))
+                    },
+                    onOpenConversation = { navController.navigate(Destination.ConversationTopics) },
+                )
+            }
+            composable<Destination.ConversationTopics> {
+                ConversationTopicsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenHistory = { navController.navigate(Destination.ConversationHistory) },
+                    onStarted = { sessionId -> navController.navigate(Destination.ConversationChat(sessionId)) },
+                )
+            }
+            composable<Destination.ConversationHistory> {
+                ConversationHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpen = { conversation ->
+                        navController.navigate(
+                            if (conversation.status == ConversationStatus.FINISHED) {
+                                Destination.ConversationFeedback(conversation.id)
+                            } else {
+                                Destination.ConversationChat(conversation.id)
+                            },
+                        )
+                    },
+                )
+            }
+            composable<Destination.ConversationChat> { entry ->
+                val route = entry.toRoute<Destination.ConversationChat>()
+                ConversationChatScreen(
+                    sessionId = route.sessionId,
+                    onBack = { navController.popBackStack() },
+                    // A finished conversation takes no more lines, so Back from the feedback skips it.
+                    onFinished = { sessionId ->
+                        navController.navigate(Destination.ConversationFeedback(sessionId)) {
+                            popUpTo<Destination.ConversationChat> { inclusive = true }
+                        }
+                    },
+                )
+            }
+            composable<Destination.ConversationFeedback> { entry ->
+                val route = entry.toRoute<Destination.ConversationFeedback>()
+                ConversationFeedbackScreen(
+                    sessionId = route.sessionId,
+                    onBack = { navController.popBackStack() },
+                    onPracticeAgain = { sessionId ->
+                        navController.navigate(Destination.ConversationChat(sessionId)) {
+                            popUpTo<Destination.ConversationFeedback> { inclusive = true }
+                        }
+                    },
+                    onOtherTopics = {
+                        // Back to the list it came from, or onto a fresh one when it came from history.
+                        if (!navController.popBackStack<Destination.ConversationTopics>(inclusive = false)) {
+                            navController.navigate(Destination.ConversationTopics) {
+                                popUpTo<Destination.ConversationFeedback> { inclusive = true }
+                            }
+                        }
                     },
                 )
             }
