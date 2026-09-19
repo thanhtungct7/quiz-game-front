@@ -11,6 +11,7 @@ class PushRouteTest {
         // The strings in duo-game-back/app/services/notification/messages.py.
         assertEquals(PushRoute.LEARN, PushRoute.fromWire("learn"))
         assertEquals(PushRoute.LEADERBOARD, PushRoute.fromWire("leaderboard"))
+        assertEquals(PushRoute.QUESTS, PushRoute.fromWire("quests"))
     }
 
     @Test
@@ -29,5 +30,6 @@ class PushRouteTest {
     fun `channel ids match the backend`() {
         assertEquals("streak", NotificationChannels.STREAK)
         assertEquals("season", NotificationChannels.SEASON)
+        assertEquals("quest", NotificationChannels.QUEST)
     }
 }

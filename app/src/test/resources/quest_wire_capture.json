@@ -1,0 +1,341 @@
+{
+  "_note": "Captured 2026-09-19 from a live backend (GET /quests/daily, POST /quests/daily/chests/100/claim, POST /quests/daily/{id}/claim) with curl. quests_completed is the element shape of battle.finished / match.finished.",
+  "daily": {
+    "quest_date": "2026-09-19",
+    "resets_at": "2026-09-19T17:00:00Z",
+    "activity_points": 100,
+    "max_activity_points": 100,
+    "quests": [
+      {
+        "id": "a4eb74a1-6f19-4eb9-b719-17defb7be653",
+        "code": "Q_LESSON_2",
+        "quest_type": "NEW_LESSONS",
+        "difficulty": "HARD",
+        "title": "Hoàn thành 2 bài học mới",
+        "progress": 2,
+        "target": 2,
+        "activity_points": 30,
+        "reward_gold": 25,
+        "reward_exp": 50,
+        "completed": true,
+        "claimed": true
+      },
+      {
+        "id": "bfc0ec2f-7b54-440a-a413-3c0b25a080d2",
+        "code": "Q_PVP_PLAY_1",
+        "quest_type": "PLAY_PVP",
+        "difficulty": "MEDIUM",
+        "title": "Chơi 1 trận đối kháng",
+        "progress": 1,
+        "target": 1,
+        "activity_points": 25,
+        "reward_gold": 15,
+        "reward_exp": 30,
+        "completed": true,
+        "claimed": false
+      },
+      {
+        "id": "c7693a6d-0e10-4d3f-89dd-b481b3eda07a",
+        "code": "Q_AI_CHAT_1",
+        "quest_type": "AI_CONVERSATION",
+        "difficulty": "MEDIUM",
+        "title": "Hoàn thành 1 hội thoại với AI",
+        "progress": 1,
+        "target": 1,
+        "activity_points": 25,
+        "reward_gold": 15,
+        "reward_exp": 30,
+        "completed": true,
+        "claimed": false
+      },
+      {
+        "id": "8ca47f3c-795d-4208-beab-f98f43044587",
+        "code": "Q_COMBO_5",
+        "quest_type": "BEST_COMBO",
+        "difficulty": "EASY",
+        "title": "Đúng liên tiếp 5 câu trong một trận",
+        "progress": 5,
+        "target": 5,
+        "activity_points": 20,
+        "reward_gold": 10,
+        "reward_exp": 20,
+        "completed": true,
+        "claimed": true
+      }
+    ],
+    "chests": [
+      {
+        "tier": "BRONZE",
+        "name": "Rương Đồng",
+        "milestone": 30,
+        "reward_gold": 15,
+        "reward_exp": 0,
+        "rolls_item": false,
+        "reached": true,
+        "claimed": true
+      },
+      {
+        "tier": "SILVER",
+        "name": "Rương Bạc",
+        "milestone": 60,
+        "reward_gold": 30,
+        "reward_exp": 30,
+        "rolls_item": false,
+        "reached": true,
+        "claimed": true
+      },
+      {
+        "tier": "GOLD",
+        "name": "Rương Vàng",
+        "milestone": 100,
+        "reward_gold": 60,
+        "reward_exp": 60,
+        "rolls_item": true,
+        "reached": true,
+        "claimed": true
+      }
+    ],
+    "claimable_count": 2
+  },
+  "claim_chest": {
+    "reward": {
+      "exp": {
+        "before": 310,
+        "after": 370,
+        "delta": 60,
+        "level_before": 3,
+        "level_after": 3,
+        "leveled_up": false
+      },
+      "gold": {
+        "before": 200,
+        "after": 260,
+        "delta": 60
+      },
+      "loot": {
+        "code": "LEATHER_VEST",
+        "name": "Áo da",
+        "rarity": "COMMON"
+      }
+    },
+    "quests": {
+      "quest_date": "2026-09-19",
+      "resets_at": "2026-09-19T17:00:00Z",
+      "activity_points": 100,
+      "max_activity_points": 100,
+      "quests": [
+        {
+          "id": "a4eb74a1-6f19-4eb9-b719-17defb7be653",
+          "code": "Q_LESSON_2",
+          "quest_type": "NEW_LESSONS",
+          "difficulty": "HARD",
+          "title": "Hoàn thành 2 bài học mới",
+          "progress": 2,
+          "target": 2,
+          "activity_points": 30,
+          "reward_gold": 25,
+          "reward_exp": 50,
+          "completed": true,
+          "claimed": true
+        },
+        {
+          "id": "bfc0ec2f-7b54-440a-a413-3c0b25a080d2",
+          "code": "Q_PVP_PLAY_1",
+          "quest_type": "PLAY_PVP",
+          "difficulty": "MEDIUM",
+          "title": "Chơi 1 trận đối kháng",
+          "progress": 1,
+          "target": 1,
+          "activity_points": 25,
+          "reward_gold": 15,
+          "reward_exp": 30,
+          "completed": true,
+          "claimed": false
+        },
+        {
+          "id": "c7693a6d-0e10-4d3f-89dd-b481b3eda07a",
+          "code": "Q_AI_CHAT_1",
+          "quest_type": "AI_CONVERSATION",
+          "difficulty": "MEDIUM",
+          "title": "Hoàn thành 1 hội thoại với AI",
+          "progress": 1,
+          "target": 1,
+          "activity_points": 25,
+          "reward_gold": 15,
+          "reward_exp": 30,
+          "completed": true,
+          "claimed": false
+        },
+        {
+          "id": "8ca47f3c-795d-4208-beab-f98f43044587",
+          "code": "Q_COMBO_5",
+          "quest_type": "BEST_COMBO",
+          "difficulty": "EASY",
+          "title": "Đúng liên tiếp 5 câu trong một trận",
+          "progress": 5,
+          "target": 5,
+          "activity_points": 20,
+          "reward_gold": 10,
+          "reward_exp": 20,
+          "completed": true,
+          "claimed": true
+        }
+      ],
+      "chests": [
+        {
+          "tier": "BRONZE",
+          "name": "Rương Đồng",
+          "milestone": 30,
+          "reward_gold": 15,
+          "reward_exp": 0,
+          "rolls_item": false,
+          "reached": true,
+          "claimed": true
+        },
+        {
+          "tier": "SILVER",
+          "name": "Rương Bạc",
+          "milestone": 60,
+          "reward_gold": 30,
+          "reward_exp": 30,
+          "rolls_item": false,
+          "reached": true,
+          "claimed": true
+        },
+        {
+          "tier": "GOLD",
+          "name": "Rương Vàng",
+          "milestone": 100,
+          "reward_gold": 60,
+          "reward_exp": 60,
+          "rolls_item": true,
+          "reached": true,
+          "claimed": true
+        }
+      ],
+      "claimable_count": 2
+    }
+  },
+  "claim_quest": {
+    "reward": {
+      "exp": {
+        "before": 370,
+        "after": 400,
+        "delta": 30,
+        "level_before": 3,
+        "level_after": 3,
+        "leveled_up": false
+      },
+      "gold": {
+        "before": 260,
+        "after": 275,
+        "delta": 15
+      },
+      "loot": null
+    },
+    "quests": {
+      "quest_date": "2026-09-19",
+      "resets_at": "2026-09-19T17:00:00Z",
+      "activity_points": 100,
+      "max_activity_points": 100,
+      "quests": [
+        {
+          "id": "a4eb74a1-6f19-4eb9-b719-17defb7be653",
+          "code": "Q_LESSON_2",
+          "quest_type": "NEW_LESSONS",
+          "difficulty": "HARD",
+          "title": "Hoàn thành 2 bài học mới",
+          "progress": 2,
+          "target": 2,
+          "activity_points": 30,
+          "reward_gold": 25,
+          "reward_exp": 50,
+          "completed": true,
+          "claimed": true
+        },
+        {
+          "id": "bfc0ec2f-7b54-440a-a413-3c0b25a080d2",
+          "code": "Q_PVP_PLAY_1",
+          "quest_type": "PLAY_PVP",
+          "difficulty": "MEDIUM",
+          "title": "Chơi 1 trận đối kháng",
+          "progress": 1,
+          "target": 1,
+          "activity_points": 25,
+          "reward_gold": 15,
+          "reward_exp": 30,
+          "completed": true,
+          "claimed": true
+        },
+        {
+          "id": "c7693a6d-0e10-4d3f-89dd-b481b3eda07a",
+          "code": "Q_AI_CHAT_1",
+          "quest_type": "AI_CONVERSATION",
+          "difficulty": "MEDIUM",
+          "title": "Hoàn thành 1 hội thoại với AI",
+          "progress": 1,
+          "target": 1,
+          "activity_points": 25,
+          "reward_gold": 15,
+          "reward_exp": 30,
+          "completed": true,
+          "claimed": false
+        },
+        {
+          "id": "8ca47f3c-795d-4208-beab-f98f43044587",
+          "code": "Q_COMBO_5",
+          "quest_type": "BEST_COMBO",
+          "difficulty": "EASY",
+          "title": "Đúng liên tiếp 5 câu trong một trận",
+          "progress": 5,
+          "target": 5,
+          "activity_points": 20,
+          "reward_gold": 10,
+          "reward_exp": 20,
+          "completed": true,
+          "claimed": true
+        }
+      ],
+      "chests": [
+        {
+          "tier": "BRONZE",
+          "name": "Rương Đồng",
+          "milestone": 30,
+          "reward_gold": 15,
+          "reward_exp": 0,
+          "rolls_item": false,
+          "reached": true,
+          "claimed": true
+        },
+        {
+          "tier": "SILVER",
+          "name": "Rương Bạc",
+          "milestone": 60,
+          "reward_gold": 30,
+          "reward_exp": 30,
+          "rolls_item": false,
+          "reached": true,
+          "claimed": true
+        },
+        {
+          "tier": "GOLD",
+          "name": "Rương Vàng",
+          "milestone": 100,
+          "reward_gold": 60,
+          "reward_exp": 60,
+          "rolls_item": true,
+          "reached": true,
+          "claimed": true
+        }
+      ],
+      "claimable_count": 1
+    }
+  },
+  "quests_completed": [
+    {
+      "id": "c7693a6d-0e10-4d3f-89dd-b481b3eda07a",
+      "title": "Hoàn thành 1 hội thoại với AI",
+      "activity_points": 25
+    }
+  ]
+}

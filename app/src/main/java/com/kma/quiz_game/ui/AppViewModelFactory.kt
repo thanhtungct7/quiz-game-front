@@ -19,6 +19,7 @@ import com.kma.quiz_game.ui.screens.game.SkillTreeViewModel
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardViewModel
 import com.kma.quiz_game.ui.screens.learn.LearnViewModel
 import com.kma.quiz_game.ui.screens.profile.ProfileViewModel
+import com.kma.quiz_game.ui.screens.quests.DailyQuestsViewModel
 
 /**
  * Builds the ViewModels whose dependencies are all application-scoped singletons.
@@ -37,6 +38,7 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
                 app.profileRepository,
                 app.gameRepository,
                 app.settingsStore,
+                app.questRepository,
             ) as T
 
             LeaderboardViewModel::class.java ->
@@ -64,6 +66,8 @@ class AppViewModelFactory(private val app: DuoGameApplication) : ViewModelProvid
             InventoryViewModel::class.java -> InventoryViewModel(app.gameRepository) as T
 
             ShopViewModel::class.java -> ShopViewModel(app.gameRepository) as T
+
+            DailyQuestsViewModel::class.java -> DailyQuestsViewModel(app.questRepository) as T
 
             ConversationTopicsViewModel::class.java ->
                 ConversationTopicsViewModel(app.conversationRepository) as T

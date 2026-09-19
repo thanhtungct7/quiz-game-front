@@ -314,6 +314,8 @@ data class BattleFinishedDto(
     val lessonProgress: BattleLessonProgressDto,
     val loot: BattleLootDto? = null,
     val streak: BattleStreakDto? = null,
+    /** Daily quests the battle finished, the lesson it completed included. */
+    val questsCompleted: List<QuestCompletedDto> = emptyList(),
 )
 
 /** Echoed stamp plus the server's own, for a round-trip estimate. */

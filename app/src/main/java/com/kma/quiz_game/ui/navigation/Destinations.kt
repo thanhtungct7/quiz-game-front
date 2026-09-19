@@ -89,6 +89,11 @@ sealed interface Destination {
     @Serializable
     data class BenchmarkExam(val capLevel: Int) : Destination
 
+    /** Today's daily quests and activity chests. Reached from the Learn tab, a result screen or
+     * the evening push; full screen, like the other places reached from inside a tab. */
+    @Serializable
+    data object DailyQuests : Destination
+
     /** AI conversation practice: the scenarios to choose from. Reached from the Learn tab. */
     @Serializable
     data object ConversationTopics : Destination

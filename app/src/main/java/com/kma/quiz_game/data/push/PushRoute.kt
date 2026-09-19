@@ -12,6 +12,7 @@ package com.kma.quiz_game.data.push
 enum class PushRoute(val wireName: String) {
     LEARN("learn"),
     LEADERBOARD("leaderboard"),
+    QUESTS("quests"),
     ;
 
     companion object {

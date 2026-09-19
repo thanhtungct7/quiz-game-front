@@ -3,6 +3,7 @@ package com.kma.quiz_game.ui.screens.learn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.quiz_game.data.local.SettingsStore
+import com.kma.quiz_game.data.remote.dto.DailyQuestsDto
 import com.kma.quiz_game.data.remote.dto.CourseMonsterDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressDto
 import com.kma.quiz_game.data.remote.dto.LessonProgressStatusDto
@@ -12,6 +13,7 @@ import com.kma.quiz_game.data.repository.CourseTree
 import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
+import com.kma.quiz_game.data.repository.QuestRepository
 import com.kma.quiz_game.ui.components.LessonNodeStatus
 import com.kma.quiz_game.ui.components.LessonPathItem
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +30,15 @@ class LearnViewModel(
     private val profileRepository: ProfileRepository,
     private val gameRepository: GameRepository,
     private val settingsStore: SettingsStore,
+    private val questRepository: QuestRepository,
 ) : ViewModel() {
+
+    /**
+     * Today's quests for the banner above the path. Its own flow rather than a field of
+     * [uiState]: that `combine` is already at its five-flow limit, and the banner changes on a
+     * different beat -- after a claim, not after a sync.
+     */
+    val quests: StateFlow<DailyQuestsDto?> = questRepository.today
 
     /** Cache-first: whatever was stored on the last run is on screen before any request goes out. */
     private val tree: StateFlow<CourseTree?> = learnRepository.observeTree()
@@ -110,6 +120,9 @@ class LearnViewModel(
             // The only source of `pendingBenchmarkLevel`, and it changes the moment an exam is
             // passed -- so the banner clears on the way back from one without a manual reload.
             gameRepository.refreshProfile()
+            // Best effort too: a battle just finished may have moved a quest, and the banner is
+            // the first place the learner lands afterwards.
+            questRepository.refresh()
             val result = learnRepository.refreshTree()
             errorMessage.value = result.exceptionOrNull()?.toUserMessage()
             // Even a failed refresh leaves the cached tree, which still names the course.

@@ -1,5 +1,6 @@
 package com.kma.quiz_game.ui.screens.battle
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,8 @@ import com.kma.quiz_game.ui.components.battle.monsterArt
 import com.kma.quiz_game.ui.components.game.ExpReward
 import com.kma.quiz_game.ui.components.game.GoldReward
 import com.kma.quiz_game.ui.components.game.LootReward
+import com.kma.quiz_game.ui.components.game.QuestToast
+import com.kma.quiz_game.ui.components.game.QuestsCompletedCard
 import com.kma.quiz_game.ui.components.game.RewardCard
 import com.kma.quiz_game.ui.components.game.RewardRow
 import com.kma.quiz_game.ui.components.game.StreakReward
@@ -56,6 +59,7 @@ fun BattleResultScreen(
     lessonId: String,
     onBackToPath: () -> Unit,
     onFightAgain: (String) -> Unit,
+    onOpenQuests: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val app = LocalContext.current.applicationContext as DuoGameApplication
@@ -78,70 +82,79 @@ fun BattleResultScreen(
         ask = finished.outcome == BattleStatusDto.WON,
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(16.dp))
-        Text(text = monsterArt(artCode), fontSize = 72.sp)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = finished.outcome.title(),
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = finished.outcome.color(),
-        )
-        finished.endReason.note(monsterName)?.let { note ->
-            Text(
-                text = note,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Neutral500,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        if (finished.firstClear) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(16.dp))
+            Text(text = monsterArt(artCode), fontSize = 72.sp)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Lần đầu hạ cửa này — thưởng đầy đủ!",
-                style = MaterialTheme.typography.titleMedium,
-                color = Orange400,
+                text = finished.outcome.title(),
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
+                color = finished.outcome.color(),
+            )
+            finished.endReason.note(monsterName)?.let { note ->
+                Text(
+                    text = note,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Neutral500,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            if (finished.firstClear) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Lần đầu hạ cửa này — thưởng đầy đủ!",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Orange400,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+            StatsCard(finished)
+
+            Spacer(Modifier.height(16.dp))
+            BattleRewards(finished)
+
+            Spacer(Modifier.height(16.dp))
+            LessonCard(finished)
+
+            if (finished.questsCompleted.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                QuestsCompletedCard(finished.questsCompleted, onOpenQuests = onOpenQuests)
+            }
+
+            Spacer(Modifier.height(24.dp))
+            DuoButton(
+                text = "Về lộ trình",
+                onClick = {
+                    viewModel.acknowledge()
+                    onBackToPath()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            DuoButton(
+                text = if (finished.outcome == BattleStatusDto.WON) "Đánh lại" else "Thử lại",
+                onClick = {
+                    viewModel.acknowledge()
+                    onFightAgain(lessonId)
+                },
+                variant = DuoButtonVariant.Outline,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
-
-        Spacer(Modifier.height(24.dp))
-        StatsCard(finished)
-
-        Spacer(Modifier.height(16.dp))
-        BattleRewards(finished)
-
-        Spacer(Modifier.height(16.dp))
-        LessonCard(finished)
-
-        Spacer(Modifier.height(24.dp))
-        DuoButton(
-            text = "Về lộ trình",
-            onClick = {
-                viewModel.acknowledge()
-                onBackToPath()
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(12.dp))
-        DuoButton(
-            text = if (finished.outcome == BattleStatusDto.WON) "Đánh lại" else "Thử lại",
-            onClick = {
-                viewModel.acknowledge()
-                onFightAgain(lessonId)
-            },
-            variant = DuoButtonVariant.Outline,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Over the content, so the moment is seen before the learner scrolls to the card.
+        QuestToast(quests = finished.questsCompleted, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 

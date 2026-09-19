@@ -20,6 +20,7 @@ import com.kma.quiz_game.data.remote.api.GameApi
 import com.kma.quiz_game.data.remote.api.NotificationsApi
 import com.kma.quiz_game.data.remote.api.ProfileApi
 import com.kma.quiz_game.data.remote.api.ProgressApi
+import com.kma.quiz_game.data.remote.api.QuestApi
 import com.kma.quiz_game.data.remote.api.UsersApi
 import com.kma.quiz_game.data.repository.AuthRepository
 import com.kma.quiz_game.data.repository.BattleRepository
@@ -28,6 +29,7 @@ import com.kma.quiz_game.data.repository.DuoRepository
 import com.kma.quiz_game.data.repository.GameRepository
 import com.kma.quiz_game.data.repository.LearnRepository
 import com.kma.quiz_game.data.repository.ProfileRepository
+import com.kma.quiz_game.data.repository.QuestRepository
 import com.kma.quiz_game.data.widget.WidgetSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,6 +84,13 @@ class DuoGameApplication : Application() {
      * bar and their class stats from the same three endpoints.
      */
     val gameRepository: GameRepository by lazy { GameRepository(gameApi) }
+
+    private val questApi: QuestApi by lazy { authenticatedRetrofit.create(QuestApi::class.java) }
+
+    /** Today's daily quests, shared by the banner on the path and the quest screen. */
+    val questRepository: QuestRepository by lazy {
+        QuestRepository(questApi, gameRepository, profileRepository)
+    }
 
     private val duoApi: DuoApi by lazy { authenticatedRetrofit.create(DuoApi::class.java) }
 
@@ -154,6 +163,7 @@ class DuoGameApplication : Application() {
         authRepository.logout()
         profileRepository.clear()
         gameRepository.clear()
+        questRepository.clear()
         // Last, and after the session is gone: the widget is the one piece of this account left on
         // screen once the app is closed, and it must not keep showing the streak of whoever just
         // signed out.

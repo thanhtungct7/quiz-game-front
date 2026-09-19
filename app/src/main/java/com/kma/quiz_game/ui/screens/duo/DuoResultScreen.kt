@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +41,8 @@ import com.kma.quiz_game.ui.components.game.ExpReward
 import com.kma.quiz_game.ui.components.game.GoldReward
 import com.kma.quiz_game.ui.components.game.HpBar
 import com.kma.quiz_game.ui.components.game.LootReward
+import com.kma.quiz_game.ui.components.game.QuestToast
+import com.kma.quiz_game.ui.components.game.QuestsCompletedCard
 import com.kma.quiz_game.ui.components.game.RewardCard
 import com.kma.quiz_game.ui.components.game.RewardRow
 import com.kma.quiz_game.ui.components.game.SeasonReward
@@ -65,6 +68,7 @@ import com.kma.quiz_game.ui.theme.Sky500
 fun DuoResultScreen(
     onPlayAgain: () -> Unit,
     onBackToLobby: () -> Unit,
+    onOpenQuests: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: DuoResultViewModel = viewModel(factory = rememberAppViewModelFactory())
@@ -77,100 +81,109 @@ fun DuoResultScreen(
         return
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(16.dp))
-        Image(
-            painter = painterResource(
-                if (finished.result == MatchOutcome.LOSE) R.drawable.mascot_sad else R.drawable.mascot,
-            ),
-            contentDescription = null,
-            modifier = Modifier.size(120.dp),
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = finished.title(),
-            fontSize = 34.sp,
-            fontWeight = FontWeight.Bold,
-            color = finished.result.color(),
-        )
-        finished.endReason.note()?.let { note ->
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(16.dp))
+            Image(
+                painter = painterResource(
+                    if (finished.result == MatchOutcome.LOSE) R.drawable.mascot_sad else R.drawable.mascot,
+                ),
+                contentDescription = null,
+                modifier = Modifier.size(120.dp),
+            )
+            Spacer(Modifier.height(8.dp))
             Text(
-                text = note,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Neutral500,
-                textAlign = TextAlign.Center,
+                text = finished.title(),
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Bold,
+                color = finished.result.color(),
+            )
+            finished.endReason.note()?.let { note ->
+                Text(
+                    text = note,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Neutral500,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
+            HealthBoard(finished)
+
+            Spacer(Modifier.height(16.dp))
+            ScoreBoard(finished)
+
+            Spacer(Modifier.height(16.dp))
+            RatingPanel(finished)
+
+            Spacer(Modifier.height(16.dp))
+            RewardCard {
+                finished.exp?.let { exp ->
+                    ExpReward(
+                        delta = exp.delta,
+                        levelBefore = exp.levelBefore,
+                        levelAfter = exp.levelAfter,
+                        leveledUp = exp.leveledUp,
+                    )
+                }
+                finished.gold?.let { gold -> GoldReward(delta = gold.delta) }
+                finished.streak?.let { streak ->
+                    StreakReward(dayStreak = streak.dayStreak, extended = streak.extended)
+                }
+                // Energy is spent by the match, so what is left is what the lobby will offer next.
+                finished.energyLeft?.let { left -> RewardRow("Lượt còn lại", "$left", Orange400) }
+            }
+
+            finished.season?.let { season ->
+                Spacer(Modifier.height(12.dp))
+                RewardCard {
+                    SeasonReward(
+                        seasonCode = season.seasonCode,
+                        ratingBefore = season.ratingBefore,
+                        ratingAfter = season.ratingAfter,
+                        tierAfter = season.tierAfter,
+                        promoted = season.promoted,
+                    )
+                }
+            }
+
+            finished.loot?.let { loot ->
+                Spacer(Modifier.height(12.dp))
+                LootReward(name = loot.name, rarity = loot.rarity)
+            }
+
+            if (finished.questsCompleted.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                QuestsCompletedCard(finished.questsCompleted, onOpenQuests = onOpenQuests)
+            }
+
+            Spacer(Modifier.height(24.dp))
+            DuoButton(
+                text = "Đấu tiếp",
+                onClick = {
+                    viewModel.playAgain()
+                    onPlayAgain()
+                },
+                variant = DuoButtonVariant.Primary,
+            )
+            Spacer(Modifier.height(12.dp))
+            DuoButton(
+                text = "Về sảnh",
+                onClick = {
+                    viewModel.acknowledge()
+                    onBackToLobby()
+                },
+                variant = DuoButtonVariant.Outline,
             )
         }
-
-        Spacer(Modifier.height(20.dp))
-        HealthBoard(finished)
-
-        Spacer(Modifier.height(16.dp))
-        ScoreBoard(finished)
-
-        Spacer(Modifier.height(16.dp))
-        RatingPanel(finished)
-
-        Spacer(Modifier.height(16.dp))
-        RewardCard {
-            finished.exp?.let { exp ->
-                ExpReward(
-                    delta = exp.delta,
-                    levelBefore = exp.levelBefore,
-                    levelAfter = exp.levelAfter,
-                    leveledUp = exp.leveledUp,
-                )
-            }
-            finished.gold?.let { gold -> GoldReward(delta = gold.delta) }
-            finished.streak?.let { streak ->
-                StreakReward(dayStreak = streak.dayStreak, extended = streak.extended)
-            }
-            // Energy is spent by the match, so what is left is what the lobby will offer next.
-            finished.energyLeft?.let { left -> RewardRow("Lượt còn lại", "$left", Orange400) }
-        }
-
-        finished.season?.let { season ->
-            Spacer(Modifier.height(12.dp))
-            RewardCard {
-                SeasonReward(
-                    seasonCode = season.seasonCode,
-                    ratingBefore = season.ratingBefore,
-                    ratingAfter = season.ratingAfter,
-                    tierAfter = season.tierAfter,
-                    promoted = season.promoted,
-                )
-            }
-        }
-
-        finished.loot?.let { loot ->
-            Spacer(Modifier.height(12.dp))
-            LootReward(name = loot.name, rarity = loot.rarity)
-        }
-
-        Spacer(Modifier.height(24.dp))
-        DuoButton(
-            text = "Đấu tiếp",
-            onClick = {
-                viewModel.playAgain()
-                onPlayAgain()
-            },
-            variant = DuoButtonVariant.Primary,
-        )
-        Spacer(Modifier.height(12.dp))
-        DuoButton(
-            text = "Về sảnh",
-            onClick = {
-                viewModel.acknowledge()
-                onBackToLobby()
-            },
-            variant = DuoButtonVariant.Outline,
-        )
+        // Over the content, so the moment is seen before the learner scrolls to the card.
+        QuestToast(quests = finished.questsCompleted, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 

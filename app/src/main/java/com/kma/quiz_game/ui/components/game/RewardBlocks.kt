@@ -66,9 +66,16 @@ fun RewardCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
 fun RewardRow(label: String, value: String, color: Color = Neutral700) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyLarge, color = Neutral500)
+        // The label takes what is left, so a long one (a quest's title) wraps instead of
+        // squeezing the value.
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Neutral500,
+            modifier = Modifier.weight(1f),
+        )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,

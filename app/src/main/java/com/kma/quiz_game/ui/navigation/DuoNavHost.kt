@@ -43,6 +43,7 @@ import com.kma.quiz_game.ui.screens.game.SkillTreeScreen
 import com.kma.quiz_game.ui.screens.leaderboard.LeaderboardScreen
 import com.kma.quiz_game.ui.screens.learn.LearnScreen
 import com.kma.quiz_game.ui.screens.profile.MyProfileScreen
+import com.kma.quiz_game.ui.screens.quests.DailyQuestsScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -104,7 +105,11 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
                         navController.navigate(Destination.BenchmarkExam(capLevel))
                     },
                     onOpenConversation = { navController.navigate(Destination.ConversationTopics) },
+                    onOpenQuests = { navController.navigate(Destination.DailyQuests) },
                 )
+            }
+            composable<Destination.DailyQuests> {
+                DailyQuestsScreen(onBack = { navController.popBackStack() })
             }
             composable<Destination.ConversationTopics> {
                 ConversationTopicsScreen(
@@ -187,6 +192,7 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
                 DuoResultScreen(
                     onPlayAgain = { navController.replaceResultWith(Destination.Duo) },
                     onBackToLobby = { navController.replaceResultWith(Destination.Duo) },
+                    onOpenQuests = { navController.navigate(Destination.DailyQuests) },
                 )
             }
             composable<Destination.DuoHistory> {
@@ -248,6 +254,7 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
                 BattleResultScreen(
                     lessonId = route.lessonId,
                     onBackToPath = { navController.replaceBattleResultWith(Destination.Learn) },
+                    onOpenQuests = { navController.navigate(Destination.DailyQuests) },
                     onFightAgain = { lessonId ->
                         navController.navigate(Destination.Battle(lessonId)) {
                             popUpTo(Destination.BattleResult(lessonId)) { inclusive = true }
@@ -264,13 +271,17 @@ fun DuoNavHost(pushRoute: PushRoute? = null, onPushRouteConsumed: () -> Unit = {
         LaunchedEffect(pushRoute) {
             val route = pushRoute ?: return@LaunchedEffect
             navController.navigateToTab(route.destination())
+            // The quest screen is not a tab: it opens over the tab it is reached from, so Back
+            // lands on the path rather than out of the app.
+            if (route == PushRoute.QUESTS) navController.navigate(Destination.DailyQuests)
             onPushRouteConsumed()
         }
     }
 }
 
+/** The tab a push opens. */
 private fun PushRoute.destination(): Destination = when (this) {
-    PushRoute.LEARN -> Destination.Learn
+    PushRoute.LEARN, PushRoute.QUESTS -> Destination.Learn
     PushRoute.LEADERBOARD -> Destination.Leaderboard
 }
 

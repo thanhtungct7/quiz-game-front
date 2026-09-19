@@ -492,6 +492,8 @@ data class MatchFinishedDto(
     val season: DuoSeasonChangeDto? = null,
     val streak: DuoStreakDto? = null,
     val energyLeft: Int? = null,
+    /** Daily quests this match finished for the player it was sent to. */
+    val questsCompleted: List<QuestCompletedDto> = emptyList(),
 )
 
 /**

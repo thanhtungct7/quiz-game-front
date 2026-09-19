@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -33,15 +34,30 @@ import kotlin.math.roundToInt
  */
 @Composable
 fun ItemIcon(code: String, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+    PixelTile(path = "items/$code.png", modifier = modifier, size = size)
+}
+
+/**
+ * Any bundled pixel-art tile under `assets/`, drawn the way [ItemIcon] draws items. [alpha] and
+ * [colorFilter] are for the states a tile has to look unavailable in, like a locked chest.
+ */
+@Composable
+fun PixelTile(
+    path: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    alpha: Float = 1f,
+    colorFilter: ColorFilter? = null,
+) {
     val context = LocalContext.current
-    val tile = remember(context, code) { ItemTiles.load(context, code) }
+    val tile = remember(context, path) { PixelTiles.load(context, path) }
 
     Canvas(modifier = modifier.size(size)) {
-        if (tile != null) drawTile(tile)
+        if (tile != null) drawTile(tile, alpha, colorFilter)
     }
 }
 
-private fun DrawScope.drawTile(tile: ImageBitmap) {
+private fun DrawScope.drawTile(tile: ImageBitmap, alpha: Float, colorFilter: ColorFilter?) {
     // Contain rather than stretch: the pack's tiles are square, a skin's is not.
     val scale = minOf(size.width / tile.width, size.height / tile.height)
     val width = (tile.width * scale).roundToInt()
@@ -55,22 +71,24 @@ private fun DrawScope.drawTile(tile: ImageBitmap) {
             ((size.height - height) / 2f).roundToInt(),
         ),
         dstSize = IntSize(width, height),
+        alpha = alpha,
+        colorFilter = colorFilter,
         filterQuality = FilterQuality.None,
     )
 }
 
-private object ItemTiles {
+private object PixelTiles {
     private val cached = ConcurrentHashMap<String, ImageBitmap>()
     private val missing = ConcurrentHashMap.newKeySet<String>()
 
-    fun load(context: Context, code: String): ImageBitmap? {
-        cached[code]?.let { return it }
+    fun load(context: Context, path: String): ImageBitmap? {
+        cached[path]?.let { return it }
         // An item with no artwork draws nothing rather than crashing a list: the catalog can grow
         // server-side without the app shipping a tile for the new row on the same day.
-        if (code in missing) return null
+        if (path in missing) return null
 
         val decoded = runCatching {
-            context.assets.open("items/$code.png").use { stream ->
+            context.assets.open(path).use { stream ->
                 BitmapFactory.decodeStream(
                     stream,
                     null,
@@ -80,9 +98,9 @@ private object ItemTiles {
         }.getOrNull()
 
         if (decoded == null) {
-            missing.add(code)
+            missing.add(path)
             return null
         }
-        return decoded.asImageBitmap().also { cached[code] = it }
+        return decoded.asImageBitmap().also { cached[path] = it }
     }
 }

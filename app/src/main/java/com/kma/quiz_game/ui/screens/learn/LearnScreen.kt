@@ -39,6 +39,7 @@ import com.kma.quiz_game.ui.components.LessonNodeStatus
 import com.kma.quiz_game.ui.components.LessonPath
 import com.kma.quiz_game.ui.components.PracticeDialog
 import com.kma.quiz_game.ui.components.UserProgressBar
+import com.kma.quiz_game.ui.components.game.QuestBanner
 import com.kma.quiz_game.ui.screens.benchmark.BenchmarkExam
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
 
@@ -47,10 +48,12 @@ fun LearnScreen(
     onLessonClick: (String) -> Unit,
     onStartBenchmark: (Int) -> Unit,
     onOpenConversation: () -> Unit,
+    onOpenQuests: () -> Unit,
     factory: AppViewModelFactory = rememberAppViewModelFactory(),
     viewModel: LearnViewModel = viewModel(factory = factory),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val quests by viewModel.quests.collectAsState()
     var practiceLessonId by remember { mutableStateOf<String?>(null) }
 
     // Re-runs when the screen re-enters composition on the way back from a lesson, refreshing the
@@ -98,6 +101,13 @@ fun LearnScreen(
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
+            }
+            item(key = "quests") {
+                QuestBanner(
+                    day = quests,
+                    onOpen = onOpenQuests,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
             item(key = "conversation") {
                 ConversationBanner(
