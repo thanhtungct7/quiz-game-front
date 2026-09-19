@@ -44,6 +44,8 @@ data class GameProfileDto(
     val gold: Int,
     val classCode: String? = null,
     val className: String? = null,
+    /** The costume worn into a fight; null wears the school's own colours. */
+    val skinCode: String? = null,
     val energy: EnergyDto,
     val dayStreak: Int,
     val bestDayStreak: Int,
@@ -67,15 +69,28 @@ data class GameProfileDto(
 
 // --- Classes --------------------------------------------------------------
 
-/** [damagePermille] is thousandths: 900 is x0.9, 1250 is x1.25. */
+/**
+ * One class in the picker.
+ *
+ * [atk] is the damage a correct answer actually deals -- the only figure that can be held against
+ * [maxHp] next to it -- and is what the picker draws. The server derives it in
+ * `combat_stats.attack_for`, so nothing here re-implements the conversion and the picker cannot
+ * drift away from the profile card.
+ *
+ * [damagePermille] is the same fact as thousandths (900 is x0.9, 1250 is x1.25): exact, and kept
+ * on the wire because the API publishes it, but not shown -- a multiplier is not something a
+ * player choosing a class can compare.
+ */
 @Serializable
 data class GameClassDto(
     val code: String,
     val name: String,
     val description: String,
     val maxHp: Int,
+    val atk: Int,
     val damagePermille: Int,
     val startingMana: Int,
+    val defence: Int,
     val isCurrent: Boolean,
 )
 

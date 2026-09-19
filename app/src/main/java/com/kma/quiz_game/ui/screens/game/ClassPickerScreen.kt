@@ -33,11 +33,14 @@ import com.kma.quiz_game.data.remote.dto.GameClassDto
 import com.kma.quiz_game.ui.components.DuoButton
 import com.kma.quiz_game.ui.components.DuoButtonVariant
 import com.kma.quiz_game.ui.rememberAppViewModelFactory
+import androidx.compose.ui.graphics.Color
+import com.kma.quiz_game.ui.components.profile.HeroPortrait
 import com.kma.quiz_game.ui.theme.Green500
 import com.kma.quiz_game.ui.theme.Indigo500
 import com.kma.quiz_game.ui.theme.Orange400
 import com.kma.quiz_game.ui.theme.Rose500
 import com.kma.quiz_game.ui.theme.ShapeXl
+import com.kma.quiz_game.ui.theme.Sky500
 
 /**
  * The class picker: the stat block a player brings into every fight, PvP and PvE alike.
@@ -72,7 +75,7 @@ fun ClassPickerScreen(
     ) {
         Text(text = "Trường phái", style = MaterialTheme.typography.headlineMedium)
         Text(
-            text = "Trường phái quyết định máu, sát thương và mana khởi đầu của bạn trong mọi trận đấu.",
+            text = "Trường phái quyết định máu, sát thương, giáp và mana khởi đầu của bạn trong mọi trận đấu.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -180,6 +183,19 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Mo
             )
             Spacer(Modifier.height(2.dp))
         }
+        // The character, not just the numbers. A school is a sprite before it is a stat block, and
+        // until this was here the only way to find out what you had picked was to start a fight.
+        HeroPortrait(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(PORTRAIT_HEIGHT),
+            glow = classGlow(gameClass.code),
+            classCode = gameClass.code,
+            // Idle only on the current pick: three sprite loops on one screen is a lot of motion
+            // for a decision that wants a calm read.
+            animated = gameClass.isCurrent,
+        )
+        Spacer(Modifier.height(4.dp))
         Text(
             text = gameClass.name,
             style = MaterialTheme.typography.titleMedium,
@@ -201,11 +217,23 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Mo
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             StatCell("Máu", "${gameClass.maxHp}", Green500)
-            // Thousandths on the wire, shown as the multiplier a player actually reasons about.
-            StatCell("Sát thương", "x${"%.2f".format(gameClass.damagePermille / 1000f)}", Rose500)
+            // The damage a correct answer really deals, not the multiplier behind it: this is the
+            // number a player weighs against the HP on the line above, and "x0,90" cannot be
+            // weighed against anything. Same colours and same pairing as the profile card, so the
+            // two screens read as one system. `damagePermille` is deliberately not drawn: it is
+            // the same fact in a form nobody picking a class can use.
+            StatCell("Sát thương", "${gameClass.atk}", Rose500)
+            StatCell("Giáp", "${gameClass.defence}", Sky500)
             StatCell("Mana đầu", "${gameClass.startingMana}", Indigo500)
         }
     }
+}
+
+/** One colour per school, so the three plinths do not all glow the same. */
+private fun classGlow(code: String): Color = when (code.uppercase()) {
+    "WARRIOR" -> Rose500
+    "MAGE" -> Indigo500
+    else -> Green500
 }
 
 @Composable
@@ -227,3 +255,6 @@ private fun StatCell(label: String, value: String, color: androidx.compose.ui.gr
         )
     }
 }
+
+/** Tall enough to read the silhouette, short enough that three fit in one row on a phone. */
+private val PORTRAIT_HEIGHT = 96.dp

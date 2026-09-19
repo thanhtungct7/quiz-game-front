@@ -92,6 +92,7 @@ fun RpgIdentityCard(
                 .height(portraitHeight),
             glow = glow,
             skinCode = profile.skinCode,
+            classCode = profile.classCode,
         )
 
         Spacer(Modifier.height(6.dp))

@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.kma.quiz_game.ui.game.art.BattleArt
+import com.kma.quiz_game.ui.game.art.HeroArt
 import com.kma.quiz_game.ui.game.art.HeroClip
 import kotlin.math.roundToInt
 
@@ -37,7 +38,7 @@ import kotlin.math.roundToInt
  *   81x50 knight scaled to a card stays pixel art instead of turning into a blur.
  * - Only the knight is cropped out of the frame, not the frame. Every frame shares one box wide
  *   enough for a thrown sword, so centring the box would slide him sideways -- the same correction
- *   [BattleArt.HERO_BODY_CENTRE] exists for in the arena.
+ *   [HeroArt.bodyCentre] exists for in the arena.
  * - The frame counter is read *inside* the draw lambda. Advancing it invalidates the draw phase
  *   and nothing above it, so an idling knight does not recompose the card, the tab row or the
  *   scrolling list he sits in.
@@ -47,22 +48,25 @@ fun HeroPortrait(
     modifier: Modifier = Modifier,
     /** The lit half of "skin & glow" -- see [heroGlowFor]. */
     glow: Color,
-    /** Which costume to draw him in. Null wears the default. */
+    /** Which costume to draw them in. Null wears the default. */
     skinCode: String? = null,
+    /** Which school to draw. Null draws the default one, as an account with no class yet has. */
+    classCode: String? = null,
     animated: Boolean = true,
 ) {
     val context = LocalContext.current
-    val page = BattleArt.heroPageFor(skinCode)
-    val sheet = remember(context, page) { HeroSheet.load(context, page) }
-    val frame = remember { mutableIntStateOf(HeroClip.IDLE.start) }
+    val art = BattleArt.heroFor(classCode, skinCode)
+    val sheet = remember(context, art.page) { HeroSheet.load(context, art.page) }
+    val idle = art.clip(HeroClip.IDLE)
+    val frame = remember(art) { mutableIntStateOf(idle.start) }
 
     if (animated) {
-        LaunchedEffect(Unit) {
+        LaunchedEffect(art) {
             val startedAt = withFrameNanos { it }
             while (true) {
                 withFrameNanos { now ->
                     val elapsed = (now - startedAt) / NANOS_PER_SECOND
-                    frame.intValue = HeroClip.IDLE.frameAt(elapsed)
+                    frame.intValue = idle.frameAt(elapsed)
                 }
             }
         }
@@ -73,7 +77,7 @@ fun HeroPortrait(
         // Read here rather than in composition: this is what keeps the idle loop in the draw
         // phase. See the class comment.
         val index = frame.intValue
-        if (sheet == null) drawSilhouette(glow) else drawHeroFrame(sheet, index)
+        if (sheet == null) drawSilhouette(glow) else drawHeroFrame(sheet, index, art)
     }
 }
 
@@ -109,17 +113,16 @@ private fun DrawScope.drawPlinth(glow: Color) {
  * whole pixels: a sprite landing on a half pixel is exactly where nearest-neighbour scaling starts
  * to shimmer as the list scrolls.
  */
-private fun DrawScope.drawHeroFrame(sheet: ImageBitmap, frameIndex: Int) {
-    val column = frameIndex % BattleArt.HERO_COLUMNS
-    val row = frameIndex / BattleArt.HERO_COLUMNS
-    val bodyLeft = (BattleArt.HERO_BODY_CENTRE - BattleArt.HERO_BODY_HALF_WIDTH) *
-        BattleArt.HERO_FRAME_WIDTH
-    val bodyWidth = 2f * BattleArt.HERO_BODY_HALF_WIDTH * BattleArt.HERO_FRAME_WIDTH
+private fun DrawScope.drawHeroFrame(sheet: ImageBitmap, frameIndex: Int, art: HeroArt) {
+    val column = frameIndex % art.columns
+    val row = frameIndex / art.columns
+    val bodyLeft = (art.bodyCentre - art.bodyHalfWidth) * art.frameWidth
+    val bodyWidth = 2f * art.bodyHalfWidth * art.frameWidth
 
-    val srcX = column * BattleArt.HERO_FRAME_WIDTH + bodyLeft.roundToInt()
-    val srcY = row * BattleArt.HERO_FRAME_HEIGHT
+    val srcX = column * art.frameWidth + bodyLeft.roundToInt()
+    val srcY = row * art.frameHeight
     val srcWidth = bodyWidth.roundToInt()
-    val srcHeight = BattleArt.HERO_FRAME_HEIGHT
+    val srcHeight = art.frameHeight
 
     // Fit by height; the crop is taller than it is wide, so height is what runs out first.
     val drawHeight = size.height * FIGURE_HEIGHT

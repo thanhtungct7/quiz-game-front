@@ -253,9 +253,14 @@ class DuoMatchViewModel(
 
 /** The match as the renderer needs it: no DTOs, no nulls, nothing the GL thread has to unwrap. */
 private fun DuoSession.toArenaState(): ArenaState = ArenaState(
-    // Two knights, not a knight and a monster. Nothing winds up on a clock here, so the cast bar
+    // Two players, not a player and a monster. Nothing winds up on a clock here, so the cast bar
     // is left unset and never drawn.
     rightIsHero = true,
+    // Straight off the player cards the server already sends, so each side fights as their own
+    // school. The cards carry no skin, so both wear their school's own colours here -- a costume
+    // shows in a lesson battle and on the profile, not across a duo.
+    leftClassCode = me?.classCode.orEmpty(),
+    rightClassCode = opponent?.classCode.orEmpty(),
     serverOffsetMs = serverOffsetMs,
     leftCombo = combo,
     rightCombo = opponentCombo,

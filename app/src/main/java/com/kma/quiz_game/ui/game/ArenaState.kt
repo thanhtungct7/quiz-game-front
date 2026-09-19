@@ -22,8 +22,20 @@ data class ArenaState(
     val artCode: String = "",
     val isBoss: Boolean = false,
     /**
-     * True in a duo match: the right-hand fighter is a second knight, drawn from the same sprite
-     * page as the left one but flipped to face him, and tinted so the two never read as one.
+     * Which school each side fights as, and the skin they wear, straight off the server's player
+     * card. The right-hand pair is read only when [rightIsHero]: a monster has art of its own.
+     *
+     * Empty means "not known yet", which draws the default school rather than nothing -- a fight
+     * that starts a frame before the profile arrives must still have someone standing in it.
+     */
+    val leftClassCode: String = "",
+    val leftSkinCode: String = "",
+    val rightClassCode: String = "",
+    val rightSkinCode: String = "",
+    /**
+     * True in a duo match: the right-hand fighter is a second player, drawn from their own
+     * school's page, flipped to face the left one and tinted so the two never read as one -- two
+     * players of the same school would otherwise be the same picture twice.
      */
     val rightIsHero: Boolean = false,
     val castEndsAt: Long = 0,

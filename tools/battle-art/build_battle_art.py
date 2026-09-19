@@ -41,6 +41,50 @@ HERO_ANIMS = [
     ("CAST",   list(range(66, 71)), 12.0),
 ]
 
+SRC_HERO = os.path.join(HERE, "source", "heroes")
+
+# The other two schools, each from a CC0 pack of its own (see ATTRIBUTION.md). Unlike the knight
+# these ship one horizontal strip per animation rather than one grid sheet, so they are cut by
+# `build_hero_pack` instead.
+#
+# `shrink` is the one number that matters here. The three packs are drawn at wildly different
+# resolutions -- the wizard stands 86px tall, the huntress 36 -- and dropping them on the same
+# stage as-is would make the mage tower over the archer. Halving the wizard brings him to 43px,
+# between the knight's 40 and the huntress's 36, and lines up the pixel density at the same time,
+# so the three read as one set. It is an integer factor on purpose: anything else resamples pixel
+# art into mush.
+#
+# None of the packs animates a spell being *held*, so CAST borrows a second attack where the pack
+# has one and repeats the first where it does not.
+#   (clip, file, frame count, fps)
+HERO_PACKS = (
+    dict(
+        code="MAGE",
+        page="hero_mage.png",
+        root=os.path.join(SRC_HERO, "wizard"),
+        shrink=2,
+        clips=[
+            ("IDLE", "Idle.png", 6, 8.0),
+            ("ATTACK", "Attack1.png", 8, 14.0),
+            ("HURT", "Hit.png", 4, 11.0),
+            ("CAST", "Attack2.png", 8, 12.0),
+        ],
+    ),
+    dict(
+        code="ARCHER",
+        page="hero_archer.png",
+        root=os.path.join(SRC_HERO, "huntress"),
+        shrink=1,
+        clips=[
+            ("IDLE", "Idle.png", 10, 8.0),
+            ("ATTACK", "Attack.png", 6, 14.0),
+            ("HURT", "Get Hit.png", 3, 11.0),
+            # Huntress 2 has a single attack, so drawing a bow is what casting looks like too.
+            ("CAST", "Attack.png", 6, 12.0),
+        ],
+    ),
+)
+
 # art_code -> (source tile, hue rotation in degrees, height in world units)
 # The hue shift is what makes one CC0 blob serve as a green slime; the height is what makes a
 # dragon read as bigger than a goblin without needing a second tile.
@@ -118,7 +162,58 @@ def build_hero():
         regions[name] = (at, len(idxs), fps)
         at += len(idxs)
     return dict(
+        code="WARRIOR", file="hero.png",
         cols=cols, frame=(fw, fh), feet=feet, anims=regions, page=page.size, count=len(wanted),
+        body_h=idle_box[3] - idle_box[1],
+        body_centre=round(body_centre, 4), body_half=round(body_half, 4), idle_box=idle_box,
+    )
+
+
+def build_hero_pack(spec):
+    """One class page, cut from a pack that ships a strip per animation.
+
+    Same output shape as `build_hero`: an 8-column page of equally sized frames, all registered
+    to one box so the character cannot slide around between clips, plus where his feet are inside
+    that box and where his body sits within it.
+    """
+    strips, frames, clips, idle = {}, [], [], []
+    for name, filename, count, fps in spec["clips"]:
+        if filename not in strips:
+            strip = Image.open(os.path.join(spec["root"], filename)).convert("RGBA")
+            fw, fh = strip.width // count, strip.height
+            if strip.width % count:
+                sys.exit(f"{spec['code']}/{filename}: {strip.width}px does not divide into "
+                         f"{count} frames")
+            cut = [strip.crop((i * fw, 0, (i + 1) * fw, fh)) for i in range(count)]
+            n = spec.get("shrink", 1)
+            if n > 1:
+                cut = [c.resize((c.width // n, c.height // n), Image.NEAREST) for c in cut]
+            strips[filename] = cut
+        cut = strips[filename]
+        clips.append((name, len(frames), len(cut), fps))
+        frames.extend(cut)
+        if name == "IDLE":
+            idle = cut
+
+    box = union_bbox(frames)
+    fw, fh = box[2] - box[0], box[3] - box[1]
+    idle_box = union_bbox([f.crop(box) for f in idle])
+    feet = idle_box[3]
+    body_centre = (idle_box[0] + idle_box[2]) / 2.0 / fw
+    body_half = (idle_box[2] - idle_box[0]) / 2.0 / fw
+
+    cols = 8
+    rows = (len(frames) + cols - 1) // cols
+    page = Image.new("RGBA", (cols * fw, rows * fh), (0, 0, 0, 0))
+    for n, frame in enumerate(frames):
+        page.paste(frame.crop(box), ((n % cols) * fw, (n // cols) * fh))
+
+    os.makedirs(ASSETS, exist_ok=True)
+    page.save(os.path.join(ASSETS, spec["page"]))
+    return dict(
+        code=spec["code"], file=spec["page"], cols=cols, frame=(fw, fh), feet=feet,
+        anims={name: (start, count, fps) for name, start, count, fps in clips},
+        page=page.size, count=len(frames), body_h=idle_box[3] - idle_box[1],
         body_centre=round(body_centre, 4), body_half=round(body_half, 4), idle_box=idle_box,
     )
 
@@ -216,29 +311,34 @@ def build_backdrop():
 def main():
     if not os.path.exists(HERO_SHEET):
         sys.exit("missing hero sheet: " + HERO_SHEET)
-    hero = build_hero()
+    heroes = [build_hero()] + [build_hero_pack(spec) for spec in HERO_PACKS]
     mon = build_monsters()
     bg = build_backdrop()
 
-    print("hero.png     ", hero["page"], "frames", hero["count"], "frame", hero["frame"],
-          "feet", hero["feet"], "idle box", hero["idle_box"])
-    for name, (start, count, fps) in hero["anims"].items():
-        print(f"    {name:8s} start={start:2d} count={count} fps={fps}")
+    for h in heroes:
+        print(f"{h['file']:<16}", h["page"], "frames", h["count"], "frame", h["frame"],
+              "feet", h["feet"], "body", h["body_h"], "idle box", h["idle_box"])
+        for name, (start, count, fps) in h["anims"].items():
+            print(f"    {name:8s} start={start:2d} count={count} fps={fps}")
     print("monsters.png ", mon["page"])
     for code, r in mon["regions"].items():
         print(f"    {code:14s} x={r[0]:3d} y={r[1]:2d} w={r[2]:2d} h={r[3]:2d} worldH={r[4]}")
     print("backdrop     ", bg)
 
     print("\n--- paste into BattleArt.kt ---")
-    fw, fh = hero["frame"]
-    print(f"const val HERO_COLUMNS = {hero['cols']}")
-    print(f"const val HERO_FRAME_WIDTH = {fw}")
-    print(f"const val HERO_FRAME_HEIGHT = {fh}")
-    print(f"const val HERO_FEET = {hero['feet']}")
-    print(f"const val HERO_BODY_CENTRE = {hero['body_centre']}f")
-    print(f"const val HERO_BODY_HALF_WIDTH = {hero['body_half']}f")
-    for name, (start, count, fps) in hero["anims"].items():
-        print(f"HeroClip.{name}(start = {start}, count = {count}, fps = {fps}f)")
+    for h in heroes:
+        fw, fh = h["frame"]
+        clips = ", ".join(
+            f"HeroClip.{name} to Clip({start}, {count}, {fps}f)"
+            for name, (start, count, fps) in h["anims"].items()
+        )
+        print(f'"{h["code"]}" to HeroArt(')
+        print(f'    page = "battle/{h["file"]}",')
+        print(f'    columns = {h["cols"]}, frameWidth = {fw}, frameHeight = {fh},')
+        print(f'    feet = {h["feet"]}, bodyHeight = {h["body_h"]},')
+        print(f'    bodyCentre = {h["body_centre"]}f, bodyHalfWidth = {h["body_half"]}f,')
+        print(f'    clips = mapOf({clips}),')
+        print("),")
     for code, r in mon["regions"].items():
         print(f'"{code}" to MonsterArt({r[0]}, {r[1]}, {r[2]}, {r[3]}, {r[4]}f),')
 

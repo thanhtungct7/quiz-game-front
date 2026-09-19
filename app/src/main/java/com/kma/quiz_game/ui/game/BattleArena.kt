@@ -9,8 +9,10 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
+import com.kma.quiz_game.ui.game.art.AttackStyle
 import com.kma.quiz_game.ui.game.art.BattleArt
 import com.kma.quiz_game.ui.game.art.BattleSprites
+import com.kma.quiz_game.ui.game.art.HeroArt
 import com.kma.quiz_game.ui.game.art.HeroClip
 import kotlin.math.max
 import kotlin.math.min
@@ -108,7 +110,11 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         val bob = if (state.rightIsHero) 0f else MathUtils.sin(clock * IDLE_SPEED) * IDLE_BOB
 
         val right = rightSize(state)
-        val left = heroSize()
+        val leftA = leftArt(state)
+        val rightA = rightArt(state)
+        val left = heroSize(leftA)
+        // A monster always closes in; only a player's school decides otherwise.
+        val rightCloses = !state.rightIsHero || !rightA.isRanged
         val rightHomeX = worldWidth * RIGHT_X
         val leftHomeX = worldWidth * LEFT_X
 
@@ -117,10 +123,12 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         var leftX = leftHomeX
         var leftY = ground
         leftLunge?.let {
-            val reach = lungeReach(it.elapsed)
-            val touch = rightHomeX - right.halfWidth - left.halfWidth - LUNGE_GAP
-            leftX = MathUtils.lerp(leftHomeX, touch, reach)
-            leftY = ground + MathUtils.sin(reach * MathUtils.PI) * LUNGE_ARC
+            if (!leftA.isRanged) {
+                val reach = lungeReach(it.elapsed)
+                val touch = rightHomeX - right.halfWidth - left.halfWidth - LUNGE_GAP
+                leftX = MathUtils.lerp(leftHomeX, touch, reach)
+                leftY = ground + MathUtils.sin(reach * MathUtils.PI) * LUNGE_ARC
+            }
         }
         if (leftLunge == null && leftStagger > 0f) {
             leftX -= leftStagger / STAGGER_SECONDS * STAGGER_SHIFT
@@ -129,10 +137,12 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         var rightX = rightHomeX
         var rightY = ground + bob
         rightLunge?.let {
-            val reach = lungeReach(it.elapsed)
-            val touch = leftHomeX + left.halfWidth + right.halfWidth + LUNGE_GAP
-            rightX = MathUtils.lerp(rightHomeX, touch, reach)
-            rightY = ground + bob + MathUtils.sin(reach * MathUtils.PI) * LUNGE_ARC
+            if (rightCloses) {
+                val reach = lungeReach(it.elapsed)
+                val touch = leftHomeX + left.halfWidth + right.halfWidth + LUNGE_GAP
+                rightX = MathUtils.lerp(rightHomeX, touch, reach)
+                rightY = ground + bob + MathUtils.sin(reach * MathUtils.PI) * LUNGE_ARC
+            }
         }
         if (rightLunge == null && rightStagger > 0f) {
             rightX += rightStagger / STAGGER_SECONDS * STAGGER_SHIFT
@@ -149,11 +159,32 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
 
         batch.begin()
         if (state.rightIsHero) {
-            drawKnight(rightX, rightY, mirrored = true, clip = rightClip, elapsed = rightElapsed)
+            drawKnight(
+                rightX, rightY, mirrored = true, clip = rightClip, elapsed = rightElapsed,
+                art = rightArt(state),
+            )
         } else {
             drawMonster(state, right, rightX, rightY)
         }
-        drawKnight(leftX, leftY, mirrored = false, clip = leftClip, elapsed = leftElapsed)
+        drawKnight(
+            leftX, leftY, mirrored = false, clip = leftClip, elapsed = leftElapsed,
+            art = leftA,
+        )
+
+        val leftShot = shotFor(
+            leftLunge, leftA, leftX + left.halfWidth, rightX - right.halfWidth,
+            ground + HERO_BODY_WORLD * SHOT_HEIGHT, toRight = true,
+        )
+        val rightShot = if (state.rightIsHero) {
+            shotFor(
+                rightLunge, rightA, rightX - right.halfWidth, leftX + left.halfWidth,
+                ground + HERO_BODY_WORLD * SHOT_HEIGHT, toRight = false,
+            )
+        } else {
+            null
+        }
+        drawArrow(leftShot)
+        drawArrow(rightShot)
         batch.end()
 
         blend()
@@ -161,6 +192,8 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         drawCastBar(state, now, rightX, rightY, right)
         drawComboGlow(state.leftCombo, leftX, ground)
         drawComboGlow(state.rightCombo, rightX, ground)
+        drawSpell(leftShot)
+        drawSpell(rightShot)
         shapes.end()
 
         batch.begin()
@@ -181,8 +214,12 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         leftStagger = max(0f, leftStagger - delta)
         rightStagger = max(0f, rightStagger - delta)
 
-        if (!leftClip.looping && leftElapsed >= leftClip.seconds) playLeft(HeroClip.IDLE)
-        if (!rightClip.looping && rightElapsed >= rightClip.seconds) playRight(HeroClip.IDLE)
+        // Clip timings belong to the pack, so a clip that has run out is asked of that fighter's
+        // own artwork rather than of a table shared by all three schools.
+        val leftPlaying = leftArt(state).clip(leftClip)
+        val rightPlaying = rightArt(state).clip(rightClip)
+        if (!leftPlaying.looping && leftElapsed >= leftPlaying.seconds) playLeft(HeroClip.IDLE)
+        if (!rightPlaying.looping && rightElapsed >= rightPlaying.seconds) playRight(HeroClip.IDLE)
 
         val iterator = floaters.iterator()
         while (iterator.hasNext()) {
@@ -202,10 +239,11 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
 
                 is ArenaEvent.SkillCast -> {
                     if (event.onLeft) playLeft(HeroClip.CAST) else playRight(HeroClip.CAST)
+                    val caster = if (event.onLeft) leftArt(state) else rightArt(state)
                     addFloater(
                         text = event.effect,
                         x = worldWidth * (if (event.onLeft) LEFT_X else RIGHT_X),
-                        y = WORLD_HEIGHT * GROUND_Y + HERO_FRAME_HEIGHT_WORLD,
+                        y = WORLD_HEIGHT * GROUND_Y + heroSize(caster).height,
                         color = COLOR_SKILL,
                         scale = SKILL_TEXT_SCALE,
                     )
@@ -236,7 +274,7 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         // Everything that used to fire the instant an event arrived (flinch, floater, shake) now
         // fires when the lunge it belongs to actually reaches the touch mark.
         val rightLabelY = WORLD_HEIGHT * GROUND_Y +
-            if (state.rightIsHero) HERO_FRAME_HEIGHT_WORLD else MONSTER_LABEL_LIFT
+            if (state.rightIsHero) heroSize(rightArt(state)).height else MONSTER_LABEL_LIFT
         leftLunge = stepLunge(leftLunge, pendingLeft, delta) { lunge ->
             rightFlinch = FLINCH_SECONDS
             if (state.rightIsHero) playRight(HeroClip.HURT)
@@ -255,7 +293,7 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
             addFloater(
                 text = "-${lunge.damage}",
                 x = worldWidth * LEFT_X,
-                y = WORLD_HEIGHT * GROUND_Y + HERO_FRAME_HEIGHT_WORLD,
+                y = WORLD_HEIGHT * GROUND_Y + heroSize(leftArt(state)).height,
                 color = COLOR_TAKEN,
                 scale = 1f,
             )
@@ -359,18 +397,29 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
     }
 
-    private fun heroFrameAspect(): Float =
-        BattleArt.HERO_FRAME_WIDTH.toFloat() / BattleArt.HERO_FRAME_HEIGHT
+    /** The artwork each side fights in. A monster on the right leaves [rightArt] unread. */
+    private fun leftArt(state: ArenaState): HeroArt =
+        BattleArt.heroFor(state.leftClassCode, state.leftSkinCode)
 
-    /** How much room a knight takes. The frame is far wider than he is; [halfWidth] is the man. */
-    private fun heroSize(): FighterSize {
-        val height = HERO_FRAME_HEIGHT_WORLD
-        val width = height * heroFrameAspect()
-        return FighterSize(width, height, width * BattleArt.HERO_BODY_HALF_WIDTH)
+    private fun rightArt(state: ArenaState): HeroArt =
+        BattleArt.heroFor(state.rightClassCode, state.rightSkinCode)
+
+    /**
+     * How much room a fighter takes. The frame is far wider than they are; [halfWidth] is the
+     * person.
+     *
+     * Scaled off the body rather than the frame, so three packs drawn at three resolutions put
+     * three fighters of the same height on the stage. Scaling off the frame would make whoever
+     * came from the pack with the most empty space around them the smallest fighter.
+     */
+    private fun heroSize(art: HeroArt): FighterSize {
+        val height = HERO_BODY_WORLD * art.frameHeight / art.bodyHeight
+        val width = height * art.frameWidth / art.frameHeight
+        return FighterSize(width, height, width * art.bodyHalfWidth)
     }
 
     private fun rightSize(state: ArenaState): FighterSize =
-        if (state.rightIsHero) heroSize() else monsterSize(state)
+        if (state.rightIsHero) heroSize(rightArt(state)) else monsterSize(state)
 
     /** How wide and tall this fight's monster stands, sprite or silhouette. */
     private fun monsterSize(state: ArenaState): FighterSize {
@@ -471,6 +520,63 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
     }
 
     /**
+     * One shot in flight, or null when the attacker is melee, idle, or the shot already landed.
+     *
+     * Crosses in [LUNGE_ADVANCE] -- the same window a lunge takes to reach the touch mark -- and
+     * disappears the instant it arrives, which is the instant `stepLunge` fires the impact. So the
+     * arrow visibly hits on the frame the damage number appears, without either one knowing about
+     * the other.
+     */
+    private fun shotFor(
+        lunge: Lunge?,
+        art: HeroArt,
+        fromX: Float,
+        toX: Float,
+        y: Float,
+        toRight: Boolean,
+    ): Shot? {
+        if (!art.isRanged) return null
+        val flying = lunge ?: return null
+        if (flying.elapsed >= LUNGE_ADVANCE) return null
+        val progress = (flying.elapsed / LUNGE_ADVANCE).coerceIn(0f, 1f)
+        return Shot(
+            x = MathUtils.lerp(fromX, toX, progress),
+            y = y,
+            toRight = toRight,
+            style = art.attack,
+            progress = progress,
+        )
+    }
+
+    /** The archer's arrow. Falls back to a dart of colour when the sprite is missing. */
+    private fun drawArrow(shot: Shot?) {
+        if (shot == null || shot.style != AttackStyle.ARROW) return
+        // Flipped rather than rotated: the sprite is drawn flat and the two fighters only ever
+        // shoot along the ground line at each other.
+        val sprite = sprites?.arrow(mirrored = !shot.toRight) ?: return
+        val width = ARROW_WIDTH
+        val height = width * sprite.regionHeight / sprite.regionWidth
+        val left = if (shot.toRight) shot.x else shot.x - width
+        batch.draw(sprite, left, shot.y - height / 2f, width, height)
+    }
+
+    /**
+     * The mage's bolt, drawn rather than cut from a sheet.
+     *
+     * The wizard pack animates its spells inside the attack frames and ships no projectile of its
+     * own, and a circle of light is a thing this renderer can already draw honestly. It grows as
+     * it travels, so a bolt reads as gathering rather than sliding.
+     */
+    private fun drawSpell(shot: Shot?) {
+        if (shot == null || shot.style != AttackStyle.SPELL) return
+        val radius = SPELL_RADIUS * (0.6f + 0.4f * shot.progress)
+        shapes.color = COLOR_SPELL_HALO
+        shapes.circle(shot.x, shot.y, radius * 1.7f)
+        shapes.color = COLOR_SPELL
+        shapes.circle(shot.x, shot.y, radius)
+    }
+
+    /**
      * One knight, facing either way.
      *
      * The mirrored one is tinted rather than recoloured: the same armour in a different light
@@ -482,15 +588,15 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         mirrored: Boolean,
         clip: HeroClip,
         elapsed: Float,
+        art: HeroArt,
     ) {
-        val size = heroSize()
-        // The frame's own feet, in case a re-pack ever leaves headroom under him.
-        val sink = size.height * (1f - BattleArt.HERO_FEET.toFloat() / BattleArt.HERO_FRAME_HEIGHT)
-        val centre =
-            if (mirrored) BattleArt.HERO_BODY_CENTRE_MIRRORED else BattleArt.HERO_BODY_CENTRE
+        val size = heroSize(art)
+        // The frame's own feet, in case a re-pack ever leaves headroom under them.
+        val sink = size.height * (1f - art.feet.toFloat() / art.frameHeight)
+        val centre = if (mirrored) art.bodyCentreMirrored else art.bodyCentre
         val left = x - size.width * centre
 
-        val frame = sprites?.hero(clip, elapsed, mirrored)
+        val frame = sprites?.hero(art, clip, elapsed, mirrored)
         if (frame == null) {
             batch.end()
             blend()
@@ -602,6 +708,15 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
      * draw and how hard to shake at the touch. [impacted] is a one-way latch, so a stretched frame
      * can never fire the touch twice.
      */
+    /** A projectile mid-flight: where it is, which way it points and how far along it is. */
+    private class Shot(
+        val x: Float,
+        val y: Float,
+        val toRight: Boolean,
+        val style: AttackStyle,
+        val progress: Float,
+    )
+
     private class Lunge(
         val damage: Int,
         val critical: Boolean = false,
@@ -620,7 +735,14 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         const val LEFT_X = 0.26f
         const val RIGHT_X = 0.72f
 
-        const val HERO_FRAME_HEIGHT_WORLD = 165f
+        /**
+         * How tall a fighter stands, in world units -- the person, not the frame around them.
+         *
+         * Was a frame height (165) back when one pack served everyone; a frame is now a different
+         * shape per school, so the constant that has to stay fixed is the body. 132 is what the
+         * knight measured at the old number, so the stage did not change size when this did.
+         */
+        const val HERO_BODY_WORLD = 132f
         /**
          * Every creature, scaled together.
          *
@@ -665,6 +787,17 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         const val LUNGE_HOLD = 0.10f
         const val LUNGE_RETURN = 0.24f
         const val LUNGE_TOTAL = LUNGE_ADVANCE + LUNGE_HOLD + LUNGE_RETURN
+        /**
+         * Where a shot leaves and arrives, as a fraction of the fighter's body -- chest height.
+         *
+         * Measured against [HERO_BODY_WORLD] rather than the frame, because a frame is a different
+         * shape per school: the mage's box is a third taller than the archer's for the same size
+         * fighter, and taking the fraction of *that* would send his bolt past his own head.
+         */
+        const val SHOT_HEIGHT = 0.55f
+        const val ARROW_WIDTH = 34f
+        const val SPELL_RADIUS = 10f
+
         const val LUNGE_ARC = 14f
         const val LUNGE_GAP = 6f
         const val MAX_PENDING_LUNGES = 3
@@ -693,6 +826,10 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         val COLOR_CRIT: Color = Color(1f, 0.5f, 0.2f, 1f)
         val COLOR_TAKEN: Color = Color(0.93f, 0.32f, 0.29f, 1f)
         val COLOR_SKILL: Color = Color(0.55f, 0.85f, 0.98f, 1f)
+
+        /** The mage's bolt: a bright core inside a softer halo, drawn rather than cut. */
+        val COLOR_SPELL: Color = Color(0.85f, 0.80f, 1f, 1f)
+        val COLOR_SPELL_HALO: Color = Color(0.55f, 0.35f, 0.95f, 0.45f)
         val COLOR_CAST_FRAME: Color = Color(0.05f, 0.04f, 0.07f, 0.85f)
         val COLOR_CAST_TRACK: Color = Color(1f, 1f, 1f, 0.18f)
         val COLOR_CAST: Color = Color(0.95f, 0.62f, 0.25f, 0.95f)

@@ -77,7 +77,16 @@ class BattleViewModel(
                 if (token != null && token != previous?.questionToken) {
                     local.update { it.copy(placedOptionIds = emptyList()) }
                 }
-                arena.publish(session.toArenaState())
+                // Read at publish time rather than combined into the flow: the profile is a
+                // StateFlow that rarely changes, and folding it in would restart this collector
+                // -- and with it the event diffing above -- every time gold ticked over.
+                val profile = gameRepository.profile.value
+                arena.publish(
+                    session.toArenaState(
+                        classCode = profile?.classCode.orEmpty(),
+                        skinCode = profile?.skinCode.orEmpty(),
+                    )
+                )
                 previous = session
             }
         }
@@ -203,8 +212,10 @@ class BattleViewModel(
 }
 
 /** The fight as the renderer needs it: no DTOs, no nulls, nothing the GL thread has to unwrap. */
-private fun BattleSession.toArenaState(): ArenaState = ArenaState(
+private fun BattleSession.toArenaState(classCode: String, skinCode: String): ArenaState = ArenaState(
     artCode = monster?.artCode.orEmpty(),
+    leftClassCode = classCode,
+    leftSkinCode = skinCode,
     isBoss = monster?.isBoss == true,
     castEndsAt = castEndsAt,
     castIntervalMs = monster?.castIntervalMs ?: 0,
