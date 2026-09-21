@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Shown in the launcher's widget picker only; the live widget is composed in Glance
      (ui/widget/StreakWidget.kt). Static by necessity — the picker inflates this without ever
-     running the app, so it shows a plausible streak rather than the real one. -->
+     running the app, so it shows a plausible streak rather than the real one.
+
+     Laid out as a 2x1 tile: copy at the top, mascot on the bottom edge, both centered. The
+     weighted spacer is an empty FrameLayout rather than <Space>: a host inflates this through
+     RemoteViews, which accepts only its own list of view classes, and android.widget.Space is
+     not on it. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -9,14 +14,16 @@
     android:background="@drawable/widget_bg_purple"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingTop="14dp">
+    android:paddingStart="10dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="10dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="🔥 85"
         android:textColor="#FFFFFF"
-        android:textSize="30sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         tools:ignore="HardcodedText" />
 
@@ -25,13 +32,17 @@
         android:layout_height="wrap_content"
         android:text="Hẹn gặp lại nhé!"
         android:textColor="#FFFFFF"
-        android:textSize="15sp"
+        android:textSize="12sp"
         tools:ignore="HardcodedText" />
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
     <ImageView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_marginTop="6dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:contentDescription="@null"
         android:src="@drawable/mascot" />
 </LinearLayout>

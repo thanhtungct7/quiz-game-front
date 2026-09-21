@@ -2,6 +2,9 @@
 <!-- minSdk is 33, so every device here is Android 13+: `targetCellWidth/Height` is the size that
      is actually honoured, and the min* pair below is only a floor for resizing.
 
+     Default is 2x1 — same footprint as the compact streak card on One UI (two columns, one row).
+     The widget can still be stretched to 2x2 or 4x2.
+
      `updatePeriodMillis` is 30 minutes because the card's copy depends on the clock, not on new
      data — "Học sớm nhé?" has to become "Giữ chuỗi..." at noon and "Sắp mất chuỗi rồi!" at 20:00
      even if the app is never opened. Anything the app learns pushes a redraw of its own through
@@ -9,11 +12,13 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/streak_widget_description"
     android:initialLayout="@layout/streak_widget_preview"
-    android:minHeight="110dp"
+    android:minHeight="40dp"
+    android:minResizeHeight="40dp"
+    android:minResizeWidth="110dp"
     android:minWidth="110dp"
     android:previewLayout="@layout/streak_widget_preview"
     android:resizeMode="horizontal|vertical"
-    android:targetCellHeight="2"
+    android:targetCellHeight="1"
     android:targetCellWidth="2"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />

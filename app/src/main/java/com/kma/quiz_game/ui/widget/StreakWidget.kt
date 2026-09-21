@@ -40,8 +40,22 @@ import com.kma.quiz_game.R
 import com.kma.quiz_game.data.local.WidgetStateStore
 import com.kma.quiz_game.data.push.PushRoute
 
-/** 2x2, the size the widget is offered at: the streak, one line, and the mascot. */
+/** 2x1, the size the widget is offered at: streak, one line, mascot along the bottom. */
+private val SHORT = DpSize(140.dp, 70.dp)
+
+/** 2x2 after a vertical resize: the streak, one line, and a larger mascot. */
 private val COMPACT = DpSize(140.dp, 140.dp)
+
+/**
+ * 2x2 where a launcher's rows are tall -- One UI gives two of its rows about 250dp, well over the
+ * 140dp a square 2x2 suggests.
+ *
+ * Without a size class this tall the card was composed for [COMPACT] and then stretched: the copy
+ * sat at the top, a mascot sized from 140dp sat at the bottom, and a third of the card in between
+ * was empty gradient. The sizes here exist so the mascot and the streak figure are measured
+ * against the height the card really has.
+ */
+private val TALL = DpSize(140.dp, 200.dp)
 
 /** 4x2. The extra width is spent on the level badge and the EXP bar, not on bigger type. */
 private val WIDE = DpSize(250.dp, 140.dp)
@@ -62,7 +76,7 @@ private const val CARD_RADIUS_DP = 24
  */
 class StreakWidget : GlanceAppWidget() {
 
-    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE))
+    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(SHORT, COMPACT, TALL, WIDE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Built on the context handed in rather than pulled off the Application: the launcher can
@@ -75,19 +89,29 @@ class StreakWidget : GlanceAppWidget() {
 }
 
 /**
- * Two layers over the gradient: the mascot pinned to the bottom edge, where the card crops it the
- * way the app's own dialogs crop it, and the text stacked from the top. Two boxes rather than one
- * column because Glance has no proportional weights to push the mascot down with.
+ * One column over the gradient: the copy, then the mascot on the bottom edge, where the card crops
+ * it the way the app's own dialogs crop it.
+ *
+ * On 2x1 the copy sits at the top and the mascot at the bottom, both centered. On a taller resize
+ * the slack is split by two weighted spacers so the copy stays between the top edge and the mascot
+ * rather than sticking to one of them when the launcher stretches the layout past the size class
+ * Glance composed for (One UI's 2x2 is about 250dp).
  */
 @Composable
 private fun StreakCard(ui: StreakWidgetUi) {
     val context = LocalContext.current
     val size = LocalSize.current
     val wide = size.width >= WIDE.width
+    val tall = size.height >= TALL.height
+    val short = size.height < COMPACT.height
     // Tied to the card's height rather than fixed: a learner who resizes the widget down to one
-    // row must not end up with the mascot printed over the message.
-    val mascotSize = (size.height * 0.42f).coerceIn(44.dp, 80.dp)
-
+    // row must not end up with the mascot printed over the message, and one resized up should get
+    // a mascot that grows into the space instead of a hole where the gradient shows through.
+    val mascotSize = if (short) {
+        56.dp
+    } else {
+        (size.height * 0.40f).coerceIn(40.dp, 92.dp)
+    }
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -103,24 +127,27 @@ private fun StreakCard(ui: StreakWidgetUi) {
             contentScale = ContentScale.FillBounds,
             modifier = GlanceModifier.fillMaxSize(),
         )
-        Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            Image(
-                provider = ImageProvider(mascotFor(ui.mood)),
-                contentDescription = null,
-                modifier = GlanceModifier.size(mascotSize),
-            )
-        }
         Column(
-            modifier = GlanceModifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.Top,
+            // No bottom padding: the mascot is meant to meet the edge of the card.
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(start = 10.dp, top = 10.dp, end = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            if (!short) {
+                Spacer(modifier = GlanceModifier.defaultWeight())
+            }
             if (ui.showStreak) {
                 Text(
                     text = "🔥 ${ui.streak}",
                     style = TextStyle(
                         color = ColorProvider(Color.White),
-                        fontSize = if (wide) 30.sp else 26.sp,
+                        fontSize = when {
+                            short -> 18.sp
+                            tall -> 32.sp
+                            wide -> 30.sp
+                            else -> 26.sp
+                        },
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     ),
@@ -128,10 +155,16 @@ private fun StreakCard(ui: StreakWidgetUi) {
             }
             Text(
                 text = ui.message,
-                maxLines = 2,
+                // One line on a card one row high: there is no room for a second, and a message
+                // cut in half reads worse than one that ends in an ellipsis.
+                maxLines = if (short) 1 else 2,
                 style = TextStyle(
                     color = ColorProvider(Color.White),
-                    fontSize = if (wide) 15.sp else 13.sp,
+                    fontSize = when {
+                        short -> 12.sp
+                        wide || tall -> 15.sp
+                        else -> 13.sp
+                    },
                     fontWeight = if (ui.showStreak) FontWeight.Medium else FontWeight.Bold,
                     textAlign = TextAlign.Center,
                 ),
@@ -140,6 +173,12 @@ private fun StreakCard(ui: StreakWidgetUi) {
                 Spacer(modifier = GlanceModifier.height(8.dp))
                 LevelStrip(ui)
             }
+            Spacer(modifier = GlanceModifier.defaultWeight())
+            Image(
+                provider = ImageProvider(mascotFor(ui.mood)),
+                contentDescription = null,
+                modifier = GlanceModifier.size(mascotSize),
+            )
         }
     }
 }

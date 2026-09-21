@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.quiz_game.data.remote.dto.GameClassDto
@@ -209,7 +211,7 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Mo
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(10.dp))
         Column(
@@ -222,9 +224,15 @@ private fun ClassCard(gameClass: GameClassDto, onClick: () -> Unit, modifier: Mo
             // weighed against anything. Same colours and same pairing as the profile card, so the
             // two screens read as one system. `damagePermille` is deliberately not drawn: it is
             // the same fact in a form nobody picking a class can use.
-            StatCell("Sát thương", "${gameClass.atk}", Rose500)
+            //
+            // The labels are one short word each because three cards share a phone's width: about
+            // 76dp of text per card, which "Sát thương" overflowed, wrapping onto a second line and
+            // leaving that one row taller than the three around it. The sentence at the top of the
+            // screen names all four stats in this same order, so the short words have somewhere to
+            // be read in full.
+            StatCell("Công", "${gameClass.atk}", Rose500)
             StatCell("Giáp", "${gameClass.defence}", Sky500)
-            StatCell("Mana đầu", "${gameClass.startingMana}", Indigo500)
+            StatCell("Mana", "${gameClass.startingMana}", Indigo500)
         }
     }
 }
@@ -236,22 +244,39 @@ private fun classGlow(code: String): Color = when (code.uppercase()) {
     else -> Green500
 }
 
+/**
+ * One stat, label left and figure right.
+ *
+ * Both halves are held to a single line. In a card a third of a phone wide there is no width to
+ * spare, and a label that wraps does not merely look cramped: it pushes its own row taller than
+ * the three beside it, so the four figures stop lining up across the three cards and the
+ * comparison the screen exists for gets harder to read. The label is the half that gives way --
+ * it takes what the figure leaves (`fill = false`, so a short label still sits against the left
+ * edge) and ellipsises rather than wrapping, because a truncated word is still readable next to
+ * an intact number, while a truncated number would be a lie.
+ */
 @Composable
-private fun StatCell(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
+private fun StatCell(label: String, value: String, color: Color) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
         )
+        Spacer(Modifier.width(6.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.labelSmall,
             color = color,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
         )
     }
 }
