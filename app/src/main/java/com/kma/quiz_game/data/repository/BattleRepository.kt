@@ -209,6 +209,33 @@ class BattleRepository(
         _session.value = BattleSession()
     }
 
+    /**
+     * The app went to the background and the lifecycle is about to close the socket.
+     *
+     * A lesson battle ends with its socket -- the server holds no seat and grants no grace -- so a
+     * fight in flight here is already lost. Saying so turns the alternative -- a spinner that waits
+     * for a snapshot nobody is going to send -- into the truth: the fight is over, the answers
+     * already given kept what they earned, and the player can start another one.
+     *
+     * The connection state is left alone: [BattleSocket] reconnects on `onStart`, and it will set
+     * the state back to CONNECTING itself.
+     */
+    fun onSocketSuspended() {
+        val current = _session.value
+        if (!current.isFighting) return
+        pendingStart = null
+        cancelStartWatchdog()
+        _session.update {
+            it.copy(
+                phase = BattlePhase.IDLE,
+                questionToken = null,
+                question = null,
+                myOptionIds = emptyList(),
+                lastError = BattleErrorCode.CONNECTION_LOST,
+            )
+        }
+    }
+
     // --- Actions -----------------------------------------------------------
 
     /**

@@ -90,8 +90,19 @@ class ArenaBridge {
     private val current = AtomicReference(ArenaState())
     private val events = ConcurrentLinkedQueue<ArenaEvent>()
 
+    /**
+     * Set by the renderer, and the other half of non-continuous rendering.
+     *
+     * The arena does not draw sixty frames a second on its own any more: it draws when it is asked
+     * to, and this is how the UI asks. Null until [BattleArena] exists, so a snapshot published
+     * before the surface is up is still stored and simply drawn on the first frame.
+     */
+    @Volatile
+    var requestFrame: (() -> Unit)? = null
+
     fun publish(state: ArenaState) {
         current.set(state)
+        requestFrame?.invoke()
     }
 
     fun emit(event: ArenaEvent) {
@@ -99,6 +110,7 @@ class ArenaBridge {
         // stops draining, and an unbounded queue would grow for as long as the fight runs.
         while (events.size >= MAX_PENDING_EVENTS) events.poll()
         events.add(event)
+        requestFrame?.invoke()
     }
 
     fun state(): ArenaState = current.get()

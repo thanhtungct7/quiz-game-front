@@ -1,5 +1,7 @@
 package com.kma.quiz_game.ui.game
 
+import android.os.Handler
+import android.os.Looper
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
@@ -49,6 +51,17 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
     private val floaters = ArrayList<Floater>()
     private val tint = Color()
 
+    /**
+     * Carries the "next frame" request for the slowed-down and stopped cases.
+     *
+     * The GL thread has no Looper, so a delayed wake-up has to be posted to the main one -- and
+     * what it posts is only `Gdx.graphics.requestRendering()`, which tells the GLSurfaceView to
+     * draw exactly one more frame. Removed in [dispose] so a dead arena cannot keep waking the
+     * device.
+     */
+    private val frameHandler = Handler(Looper.getMainLooper())
+    private val frameTick = Runnable { requestFrame() }
+
     /** Seconds left of each fighter's flinch, and of the screen shake a blow causes. */
     private var rightFlinch = 0f
     private var leftFlinch = 0f
@@ -58,6 +71,7 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
     private var rightStagger = 0f
     /** Runs forever; drives the idle bob so a still fight is not a still picture. */
     private var clock = 0f
+    private var lastRenderMs = 0L
 
     /** What each knight is doing, and how far into doing it he is. */
     private var leftClip = HeroClip.IDLE
@@ -79,6 +93,50 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         camera = OrthographicCamera()
         sprites = BattleSprites.load()
         resize(Gdx.graphics.width, Gdx.graphics.height)
+        // Tối ưu hóa năng lượng: tắt dựng hình liên tục (GLSurfaceView -> RENDERMODE_WHEN_DIRTY).
+        // Một frame chỉ được vẽ khi có người xin -- xem requestFrame() và scheduleNextFrame().
+        Gdx.graphics.setContinuousRendering(false)
+        // Nửa còn lại của hợp đồng: UI xin một frame mỗi khi trạng thái hoặc sự kiện đổi.
+        bridge.requestFrame = ::requestFrame
+    }
+
+    /** Asks libGDX for exactly one more frame. Safe from any thread: it only posts to the GL thread. */
+    private fun requestFrame() {
+        runCatching { Gdx.graphics?.requestRendering() }
+    }
+
+    /**
+     * How long to wait before asking for the next frame, in milliseconds.
+     *
+     * Three speeds, chosen per frame from what is actually moving:
+     * - **0** -- a blow is flying, a damage number is floating, someone is flinching: draw the next
+     *   frame as soon as the GL thread is free, which is what sixty frames a second means.
+     * - **[CAST_FRAME_MS]** -- only the monster's wind-up bar is filling. It is interpolated from a
+     *   deadline, so ten updates a second looks smooth and costs a sixth of the work.
+     * - **-1** -- nothing is moving. Draw nothing at all until something asks: the picture on
+     *   screen is the one already drawn, and drawing it again would be work with no result.
+     */
+    private fun nextFrameDelayMs(state: ArenaState): Long = when {
+        isAnimating() -> 0L
+        !state.finished -> CAST_FRAME_MS
+        else -> -1L
+    }
+
+    /** True while anything on the stage is mid-animation rather than holding still. */
+    private fun isAnimating(): Boolean =
+        leftLunge != null || rightLunge != null ||
+            pendingLeft.isNotEmpty() || pendingRight.isNotEmpty() ||
+            floaters.isNotEmpty() ||
+            rightFlinch > 0f || leftFlinch > 0f || shake > 0f ||
+            leftStagger > 0f || rightStagger > 0f
+
+    private fun scheduleNextFrame(state: ArenaState) {
+        frameHandler.removeCallbacks(frameTick)
+        when (val delayMs = nextFrameDelayMs(state)) {
+            0L -> requestFrame()
+            -1L -> Unit //nothing to draw: the surface keeps the frame it already has
+            else -> frameHandler.postDelayed(frameTick, delayMs)
+        }
     }
 
     override fun resize(width: Int, height: Int) {
@@ -92,9 +150,10 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
     }
 
     override fun render() {
-        val delta = min(Gdx.graphics.deltaTime, MAX_DELTA)
-        val state = bridge.state()
         val now = android.os.SystemClock.elapsedRealtime()
+        val delta = if (lastRenderMs == 0L) 0f else min((now - lastRenderMs) / 1000f, MAX_INNER_DELTA)
+        lastRenderMs = now
+        val state = bridge.state()
 
         advance(delta, state)
         Gdx.gl.glClearColor(0f, 0f, 0f, 0f)
@@ -106,8 +165,12 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
 
         val worldWidth = camera.viewportWidth
         val ground = WORLD_HEIGHT * GROUND_Y
-        // A knight has his own idle animation; only a monster needs the bob to look alive.
-        val bob = if (state.rightIsHero) 0f else MathUtils.sin(clock * IDLE_SPEED) * IDLE_BOB
+        // A knight has his own idle animation; only a monster needs the bob to look alive. The bob
+        // is a way of telling "the fight is still running" from "the fight has stopped", and a
+        // stopped fight is not drawn at all -- so it belongs to the frames that are drawn anyway.
+        val bob =
+            if (state.rightIsHero || state.finished) 0f
+            else MathUtils.sin(clock * IDLE_SPEED) * IDLE_BOB
 
         val right = rightSize(state)
         val leftA = leftArt(state)
@@ -199,6 +262,9 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         batch.begin()
         drawFloaters()
         batch.end()
+
+        // Last thing in the frame: decide whether there is a next one at all.
+        scheduleNextFrame(state)
     }
 
     // --- simulation ---------------------------------------------------------
@@ -682,6 +748,8 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
     }
 
     override fun dispose() {
+        frameHandler.removeCallbacks(frameTick)
+        bridge.requestFrame = null
         if (this::shapes.isInitialized) shapes.dispose()
         if (this::batch.isInitialized) batch.dispose()
         if (this::font.isInitialized) font.dispose()
@@ -729,6 +797,17 @@ class BattleArena(private val bridge: ArenaBridge) : ApplicationAdapter() {
         /** World units. Everything else is expressed against this, so the arena scales as one. */
         const val WORLD_HEIGHT = 270f
         const val MAX_DELTA = 0.05f
+        const val MAX_INNER_DELTA = 0.12f
+
+        /**
+         * Ten frames a second, for the one animation that is a clock rather than a flourish.
+         *
+         * The wind-up bar is drawn from a deadline (`castFraction`), so it does not need sixty
+         * frames to look smooth -- it needs enough of them that a two-second fill does not visibly
+         * step. Ten updates a second is the difference between a GPU that is always busy and one
+         * that idles between answers.
+         */
+        const val CAST_FRAME_MS = 100L
 
         /** The line both fighters stand on, as a fraction of the world height. */
         const val GROUND_Y = 0.13f

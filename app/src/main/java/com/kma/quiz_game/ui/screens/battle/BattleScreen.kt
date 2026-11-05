@@ -1,6 +1,10 @@
 package com.kma.quiz_game.ui.screens.battle
 
+import android.app.Activity
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -126,6 +130,32 @@ fun BattleScreen(
 
     // The server never confirmed the walk-out. It cannot, on a socket that is down.
     LaunchedEffect(state.hasLeft) { if (state.hasLeft) onLeft() }
+
+// Tối ưu hóa năng lượng: Giữ sáng màn hình an toàn qua Window Flag thay vì WakeLock thủ công.
+    // Tự động giải phóng cờ khi rời khỏi Composable mà không sợ rò rỉ (Wakelock leak).
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(Unit) {
+        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    // Đăng ký BattleSocket theo dõi Lifecycle của màn hình chiến đấu:
+    // Tự động ngắt socket (code 1000) khi onStop để modem hạ về RRC_IDLE và tái kết nối khi onStart
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val duoApp = LocalContext.current.applicationContext as? DuoGameApplication
+    DisposableEffect(lifecycleOwner) {
+        val socket = duoApp?.battleSocket
+        if (socket != null) {
+            lifecycleOwner.lifecycle.addObserver(socket)
+        }
+        onDispose {
+            if (socket != null) {
+                lifecycleOwner.lifecycle.removeObserver(socket)
+            }
+        }
+    }
 
     BackHandler { viewModel.setExitDialogVisible(true) }
 

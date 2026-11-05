@@ -2,6 +2,8 @@ package com.kma.quiz_game.data.remote
 
 import android.os.SystemClock
 import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.kma.quiz_game.BuildConfig
 import com.kma.quiz_game.data.remote.dto.BattleEvent
 import com.kma.quiz_game.data.remote.dto.decodeBattleEvent
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.random.Random
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import okhttp3.OkHttpClient
@@ -24,6 +27,9 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 private const val TAG = "BattleSocket"
+
+/** How long the app may sit in the background before the socket is closed (30 s). */
+private const val BACKGROUND_GRACE_MS = 30_000L
 
 /**
  * Reconnect backoff, capped rather than exhausted.
@@ -54,7 +60,13 @@ class BattleSocket(
     private val json: Json,
     private val tokenProvider: suspend () -> String?,
     baseUrl: String = BuildConfig.API_BASE_URL,
-) {
+    /**
+     * Told just before [onStop] closes the socket. A lesson battle cannot outlive its socket -- the
+     * server ends the fight the moment the connection drops -- so whoever owns the session has to
+     * hear about the closure rather than discover it as a spinner that never resolves.
+     */
+    private val onSuspended: () -> Unit = {},
+) : DefaultLifecycleObserver {
     /** `API_BASE_URL` already ends in `/api/v1/`. OkHttp upgrades an http(s) URL to a WebSocket
      * itself, so no separate ws:// BuildConfig field is needed. */
     private val endpoint = baseUrl.trimEnd('/') + "/battles/ws"
@@ -80,6 +92,42 @@ class BattleSocket(
      */
     @Volatile
     private var waitingToRetry = false
+
+    /** Lifecycle-aware: the app left the foreground, so the socket closes for good.
+     *
+     * Nothing in the background may hold a socket open: the pings -- OkHttp's twenty-second one and
+     * the screen's own timer -- are each a small packet that resets the radio's inactivity timer
+     * and keeps the modem in `RRC_CONNECTED`, which is the expensive state. Closing with 1000 lets
+     * the radio fall back to `RRC_IDLE` and lets the device reach Doze.
+     *
+     * The price is the fight: the server grants no seat and ends a battle when its socket dies.
+     * [onSuspended] is how that price gets paid visibly instead of as a hung screen. */
+    override fun onStop(owner: LifecycleOwner) {
+        // A short grace period: a screen blip or a quick app switch must not forfeit the fight.
+        // Only a genuine stay in the background (longer than the grace) closes the socket.
+        stopJob?.cancel()
+        stopJob = scope.launch {
+            delay(BACKGROUND_GRACE_MS)
+            Log.i(TAG, "Backgrounded > ${BACKGROUND_GRACE_MS}ms: closing 1000 so the radio can reach RRC_IDLE")
+            onSuspended()
+            close()
+        }
+    }
+
+    /** Lifecycle-aware: back in the foreground, so open a new socket for the next fight. */
+    override fun onStart(owner: LifecycleOwner) {
+        if (stopJob?.isActive == true) {
+            // Returned inside the grace period: the socket was never closed, nothing to redo.
+            stopJob?.cancel()
+            stopJob = null
+            Log.i(TAG, "Lifecycle onStart: back within grace, keeping the socket")
+            return
+        }
+        Log.i(TAG, "Lifecycle onStart: reconnecting the socket")
+        connect()
+    }
+
+    private var stopJob: Job? = null
 
     val isConnected: Boolean get() = socket != null
 
@@ -140,7 +188,8 @@ class BattleSocket(
                 }
                 _events.emit(BattleEvent.SocketClosed(willRetry = true))
                 waitingToRetry = true
-                delay(RETRY_DELAYS_MS.getOrElse(attempt) { MAX_RETRY_DELAY_MS })
+                val baseDelay = RETRY_DELAYS_MS.getOrElse(attempt) { MAX_RETRY_DELAY_MS }
+                delay(baseDelay * Random.nextDouble(0.5, 1.5).toLong())
                 waitingToRetry = false
                 attempt++
             }

@@ -24,7 +24,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /** How often the round trip is measured. The arena needs no ping; a warning banner does. */
-private const val PING_INTERVAL_MS = 5_000L
+private const val PING_INTERVAL_MS = 15_000L
 
 /**
  * What the duo match screen draws: the live session plus the little that is presentation only.

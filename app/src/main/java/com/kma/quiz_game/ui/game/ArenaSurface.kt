@@ -138,7 +138,8 @@ class ArenaFragment : AndroidFragmentApplication() {
             b = 8
             a = 8
         }
-        return initializeForView(BattleArena(bridge), config)
+        val view = initializeForView(BattleArena(bridge), config)
+        return view
     }
 
     companion object {

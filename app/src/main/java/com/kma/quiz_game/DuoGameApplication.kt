@@ -113,12 +113,15 @@ class DuoGameApplication : Application() {
 
     /** A socket of its own, not duo's: two protocols, two engines on the server, and a battle
      * that must not be torn down by anything happening in a match. */
-    private val battleSocket: BattleSocket by lazy {
+    val battleSocket: BattleSocket by lazy {
         val freshToken = FreshTokenProvider(usersApi, tokenStore)
         BattleSocket(
             client = NetworkModule.buildWebSocketClient(),
             json = NetworkModule.json,
             tokenProvider = freshToken::invoke,
+            // The lifecycle closes the socket when the app goes to the background, which also ends
+            // the fight the server was running for it. The repository is what can say so on screen.
+            onSuspended = { battleRepository.onSocketSuspended() },
         )
     }
 
@@ -146,6 +149,7 @@ class DuoGameApplication : Application() {
         // Before any push can arrive: a notification posted to a channel that does not exist yet
         // is dropped.
         NotificationChannels.createAll(this)
+        NetworkModule.initializeCache(this)
     }
 
     /**

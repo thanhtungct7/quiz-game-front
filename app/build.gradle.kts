@@ -70,10 +70,15 @@ android {
         // Offline fallback, when there is no internet at the venue: swap the two lines. The LAN
         // IP must then be in network_security_config.xml AND in ALLOWED_HOSTS as well.
         // buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.8:8000/api/v1/\"")
+        //
+        // Overridable at build time, so a measurement build can point at a backend running on the
+        // host without editing this file: -PapiBaseUrl=http://localhost:8000/api/v1/
+        // `localhost` rather than 127.0.0.1 because that is the name network_security_config.xml
+        // grants cleartext to, and `adb reverse tcp:8000 tcp:8000` maps it to the host's uvicorn.
         buildConfigField(
             "String",
             "API_BASE_URL",
-            "\"https://decline-backside-zoologist.ngrok-free.dev/api/v1/\"",
+            "\"${(findProperty("apiBaseUrl") as String?) ?: "https://decline-backside-zoologist.ngrok-free.dev/api/v1/"}\"",
         )
 
         // Firebase Storage download endpoint. Content stores paths inside the bucket
@@ -95,8 +100,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".optimized"
+            versionNameSuffix = "-optimized"
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
